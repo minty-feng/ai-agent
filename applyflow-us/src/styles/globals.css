@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 255 255 255;
+  --foreground: 17 24 39;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  color: rgb(var(--foreground));
+  background: rgb(var(--background));
+}
+
+@layer components {
+  /* Container utilities for ApplyFlow */
+  .container-responsive {
+    @apply max-w-content mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Report container with wider max-width (1400px) for better readability of detailed reports */
+  .container-report {
+    @apply max-w-report mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Primary CTA Button */
+  .btn-primary {
+    @apply px-6 py-3 bg-secondary-900 text-white rounded-lg font-medium hover:bg-secondary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-secondary-900 border border-secondary-300 rounded-lg font-medium hover:bg-secondary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Text Button */
+  .btn-text {
+    @apply px-4 py-2 text-primary-600 hover:text-primary-700 font-medium transition-colors;
+  }
+
+  /* Status badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-saved {
+    @apply bg-secondary-100 text-secondary-700;
+  }
+
+  .badge-applied {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-interviewing {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .badge-offer {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .badge-rejected {
+    @apply bg-red-100 text-red-700;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white border border-secondary-200 rounded-lg p-6;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-2 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+
+  .textarea {
+    @apply w-full px-4 py-3 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-secondary-200 rounded;
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+}
+
+/* Animation utilities */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}

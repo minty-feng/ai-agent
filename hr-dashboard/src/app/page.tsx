@@ -3,8 +3,10 @@ import StatsCard from '@/components/StatsCard';
 import ChallengeCard from '@/components/ChallengeCard';
 import SkillCard from '@/components/SkillCard';
 
+type Difficulty = 'Easy' | 'Medium' | 'Hard';
+
 export default function Home() {
-  const challenges = [
+  const challenges: Array<{ title: string; difficulty: Difficulty; points: number; successRate: number }> = [
     { title: "Two Sum", difficulty: "Easy", points: 10, successRate: 87 },
     { title: "Binary Search Tree", difficulty: "Medium", points: 25, successRate: 65 },
     { title: "Dynamic Programming", difficulty: "Hard", points: 50, successRate: 42 },

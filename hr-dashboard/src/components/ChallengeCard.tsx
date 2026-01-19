@@ -1,3 +1,5 @@
+type Difficulty = 'Easy' | 'Medium' | 'Hard';
+
 export default function ChallengeCard({ 
   title, 
   difficulty, 
@@ -5,11 +7,11 @@ export default function ChallengeCard({
   successRate 
 }: { 
   title: string; 
-  difficulty: string; 
+  difficulty: Difficulty; 
   points: number; 
   successRate: number;
 }) {
-  const difficultyColors = {
+  const difficultyColors: Record<Difficulty, string> = {
     Easy: 'bg-green-100 text-green-700',
     Medium: 'bg-yellow-100 text-yellow-700',
     Hard: 'bg-red-100 text-red-700',
@@ -19,7 +21,7 @@ export default function ChallengeCard({
     <div className="bg-white p-5 rounded-lg shadow hover:shadow-lg transition cursor-pointer border border-gray-200">
       <div className="flex justify-between items-start mb-3">
         <h3 className="font-semibold text-gray-800 text-lg">{title}</h3>
-        <span className={`text-xs px-2 py-1 rounded ${difficultyColors[difficulty as keyof typeof difficultyColors]}`}>
+        <span className={`text-xs px-2 py-1 rounded ${difficultyColors[difficulty]}`}>
           {difficulty}
         </span>
       </div>

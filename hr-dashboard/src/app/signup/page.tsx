@@ -5,18 +5,18 @@ import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Button } from '@/components/Button';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleSignup = () => {
     setLoading(true);
     // Simulate OAuth flow
     setTimeout(() => {
-      window.location.href = '/jobs';
+      window.location.href = '/onboarding/resume';
     }, 1000);
   };
 
-  const handleEmailLogin = () => {
+  const handleEmailSignup = () => {
     alert('Magic link sent! Check your email.');
   };
 
@@ -28,16 +28,16 @@ export default function LoginPage() {
           <div className="max-w-md mx-auto">
             <div className="card">
               <h1 className="text-2xl font-bold text-center text-secondary-900 mb-2">
-                Welcome back
+                Create your account
               </h1>
               <p className="text-center text-secondary-600 mb-8">
-                Log in to continue your interview prep.
+                We keep your reports anonymous by default.
               </p>
 
               <div className="space-y-4">
                 <Button
                   variant="secondary"
-                  onClick={handleGoogleLogin}
+                  onClick={handleGoogleSignup}
                   loading={loading}
                   disabled={loading}
                   className="w-full flex items-center justify-center gap-2"
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
                 <Button
                   variant="secondary"
-                  onClick={handleEmailLogin}
+                  onClick={handleEmailSignup}
                   className="w-full"
                 >
                   Continue with email magic link
@@ -70,9 +70,9 @@ export default function LoginPage() {
               </div>
 
               <p className="mt-6 text-center text-sm text-secondary-600">
-                Don't have an account?{' '}
-                <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
-                  Sign up
+                Already have an account?{' '}
+                <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+                  Log in
                 </Link>
               </p>
             </div>

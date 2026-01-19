@@ -22,6 +22,7 @@ body {
     @apply max-w-content mx-auto px-4 sm:px-6 lg:px-8;
   }
 
+  /* Report container with wider max-width (1400px) for better readability of detailed reports */
   .container-report {
     @apply max-w-report mx-auto px-4 sm:px-6 lg:px-8;
   }
@@ -84,4 +85,20 @@ body {
   .skeleton {
     @apply animate-pulse bg-secondary-200 rounded;
   }
+}
+
+/* Animation utilities */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
 }

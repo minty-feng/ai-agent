@@ -115,7 +115,7 @@ export default function ReportPage() {
                 1) 证据力不足：缺指标/缺影响范围
               </h4>
               <div className="text-sm text-text-secondary space-y-1">
-                <p>• 改法：用"背景-行动-结果"三段式，补充X指标</p>
+                <p>• 改法：用&ldquo;背景-行动-结果&rdquo;三段式，补充X指标</p>
                 <p>• 补充：数据/规模/你负责的边界</p>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function ReportPage() {
               </h4>
               <div className="text-sm text-text-secondary space-y-1">
                 <p>• 改法：先总后分，每个要点单独成段</p>
-                <p>• 补充：使用"首先...其次...最后"等连接词</p>
+                <p>• 补充：使用&ldquo;首先...其次...最后&rdquo;等连接词</p>
               </div>
             </div>
 

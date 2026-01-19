@@ -72,7 +72,6 @@ export default function SessionPage() {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [showSummary, setShowSummary] = useState(false);
 
   const currentQuestion = mockQuestions[currentIndex];
@@ -80,21 +79,15 @@ export default function SessionPage() {
 
   // Auto-save functionality
   useEffect(() => {
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer);
-    }
-
     const timer = setTimeout(() => {
       // Auto-save logic would go here
       console.log('Auto-saved');
     }, 3000);
 
-    setAutoSaveTimer(timer);
-
     return () => {
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
     };
-  }, [answers[currentIndex]]);
+  }, [answers, currentIndex]);
 
   const handleAnswerChange = (value: string) => {
     setAnswers({
@@ -178,7 +171,7 @@ export default function SessionPage() {
                 <h4 className="text-sm font-medium mb-3">Top3 建议：</h4>
                 <ol className="space-y-2 text-sm text-text-primary">
                   <li>1) 证据力不足：缺少具体指标和影响范围的量化数据</li>
-                  <li>2) 结构性可改进：建议使用"背景-行动-结果"三段式回答</li>
+                  <li>2) 结构性可改进：建议使用&ldquo;背景-行动-结果&rdquo;三段式回答</li>
                   <li>3) 深度不够：部分技术问题回答偏浅，可以更深入展开</li>
                 </ol>
               </div>

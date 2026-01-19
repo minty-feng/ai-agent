@@ -18,14 +18,14 @@ export default function ChallengeCard({
   };
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow hover:shadow-lg transition cursor-pointer border border-gray-200">
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="font-semibold text-gray-800 text-lg">{title}</h3>
-        <span className={`text-xs px-2 py-1 rounded ${difficultyColors[difficulty]}`}>
+    <div className="cursor-pointer rounded-xl border border-gray-200/70 bg-white p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md">
+      <div className="mb-3 flex items-start justify-between">
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${difficultyColors[difficulty]}`}>
           {difficulty}
         </span>
       </div>
-      <div className="flex items-center justify-between text-sm text-gray-600">
+      <div className="flex items-center justify-between text-sm text-slate-600">
         <div className="flex items-center space-x-4">
           <span className="flex items-center">
             <svg className="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">

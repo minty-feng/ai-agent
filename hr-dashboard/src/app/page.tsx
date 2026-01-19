@@ -1,4 +1,3 @@
-import Header from '@/components/Header';
 import StatsCard from '@/components/StatsCard';
 import ChallengeCard from '@/components/ChallengeCard';
 import SkillCard from '@/components/SkillCard';
@@ -22,18 +21,16 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
+    <>
+      <main className="container mx-auto px-4 py-10">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome back!</h1>
-          <p className="text-gray-600">Continue your coding journey</p>
+        <div className="mb-10">
+          <h1 className="mb-2 text-3xl font-semibold text-slate-900">Welcome back!</h1>
+          <p className="text-slate-600">Continue your coding journey</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard title="Problems Solved" value={127} icon="✓" />
           <StatsCard title="Current Streak" value="7 days" icon="🔥" />
           <StatsCard title="Ranking" value="#1,234" icon="🏆" />
@@ -41,17 +38,17 @@ export default function Home() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Challenges Section */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Practice Challenges</h2>
-                <button className="text-green-600 hover:text-green-700 font-medium">
+            <div className="mb-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">Practice Challenges</h2>
+                <button className="font-medium text-green-600 transition hover:text-green-700">
                   View All →
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {challenges.map((challenge, index) => (
                   <ChallengeCard key={index} {...challenge} />
                 ))}
@@ -59,21 +56,21 @@ export default function Home() {
             </div>
 
             {/* Competitions Section */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Active Competitions</h2>
+            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-slate-900">Active Competitions</h2>
               <div className="space-y-4">
-                <div className="border-l-4 border-green-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-800">Weekly Challenge #47</h3>
-                  <p className="text-sm text-gray-600">Ends in 3 days</p>
-                  <div className="flex items-center mt-2 text-sm text-gray-700">
+                <div className="border-l-4 border-green-500 py-2 pl-4">
+                  <h3 className="font-semibold text-slate-900">Weekly Challenge #47</h3>
+                  <p className="text-sm text-slate-500">Ends in 3 days</p>
+                  <div className="mt-2 flex items-center text-sm text-slate-600">
                     <span className="mr-4">👥 12,543 participants</span>
                     <span>🏆 Prize: $5,000</span>
                   </div>
                 </div>
-                <div className="border-l-4 border-blue-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-800">Algorithm Marathon</h3>
-                  <p className="text-sm text-gray-600">Ends in 10 days</p>
-                  <div className="flex items-center mt-2 text-sm text-gray-700">
+                <div className="border-l-4 border-blue-500 py-2 pl-4">
+                  <h3 className="font-semibold text-slate-900">Algorithm Marathon</h3>
+                  <p className="text-sm text-slate-500">Ends in 10 days</p>
+                  <div className="mt-2 flex items-center text-sm text-slate-600">
                     <span className="mr-4">👥 8,921 participants</span>
                     <span>🏆 Prize: $10,000</span>
                   </div>
@@ -84,41 +81,41 @@ export default function Home() {
 
           {/* Skills Sidebar */}
           <div>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Skills</h2>
+            <div className="mb-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-slate-900">Your Skills</h2>
               <div className="space-y-4">
                 {skills.map((skill, index) => (
                   <SkillCard key={index} {...skill} />
                 ))}
               </div>
-              <button className="w-full mt-4 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-medium">
+              <button className="mt-4 w-full rounded-lg bg-green-500 py-2 font-medium text-white transition hover:bg-green-600">
                 Add New Skill
               </button>
             </div>
 
             {/* Achievements */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Achievements</h2>
+            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold text-slate-900">Achievements</h2>
               <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center space-x-3 rounded-lg bg-yellow-50 p-3">
                   <span className="text-2xl">🥇</span>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Problem Solver</h4>
-                    <p className="text-xs text-gray-600">100+ problems solved</p>
+                    <h4 className="font-semibold text-slate-900">Problem Solver</h4>
+                    <p className="text-xs text-slate-600">100+ problems solved</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-3 rounded-lg bg-blue-50 p-3">
                   <span className="text-2xl">⚡</span>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Speed Demon</h4>
-                    <p className="text-xs text-gray-600">Top 10% fastest solutions</p>
+                    <h4 className="font-semibold text-slate-900">Speed Demon</h4>
+                    <p className="text-xs text-slate-600">Top 10% fastest solutions</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center space-x-3 rounded-lg bg-green-50 p-3">
                   <span className="text-2xl">🎯</span>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Consistent</h4>
-                    <p className="text-xs text-gray-600">7-day streak</p>
+                    <h4 className="font-semibold text-slate-900">Consistent</h4>
+                    <p className="text-xs text-slate-600">7-day streak</p>
                   </div>
                 </div>
               </div>
@@ -128,7 +125,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0d1117] text-white mt-16 py-8">
+      <footer className="mt-16 bg-[#0b0f14] py-8 text-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -169,6 +166,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+    </>
   );
 }

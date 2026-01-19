@@ -1,4 +1,4 @@
-type Difficulty = 'Easy' | 'Medium' | 'Hard';
+import type { Difficulty } from '@/types';
 
 export default function ChallengeCard({ 
   title, 

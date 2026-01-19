@@ -90,12 +90,7 @@ Displays skill progress with level indicators and progress bars.
 
 ## Customization
 
-The dashboard uses custom colors defined in `tailwind.config.ts`:
-- `hr-green`: #39424e
-- `hr-dark`: #1e2022
-- `hr-light`: #f4f4f4
-
-You can modify these colors and add more styling options in the Tailwind configuration.
+The dashboard uses Tailwind CSS for styling. You can customize the design by modifying the Tailwind configuration in `tailwind.config.ts` or by updating component styles directly.
 
 ## License
 

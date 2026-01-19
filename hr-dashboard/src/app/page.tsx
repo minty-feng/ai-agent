@@ -2,8 +2,7 @@ import Header from '@/components/Header';
 import StatsCard from '@/components/StatsCard';
 import ChallengeCard from '@/components/ChallengeCard';
 import SkillCard from '@/components/SkillCard';
-
-type Difficulty = 'Easy' | 'Medium' | 'Hard';
+import type { Difficulty } from '@/types';
 
 export default function Home() {
   const challenges: Array<{ title: string; difficulty: Difficulty; points: number; successRate: number }> = [

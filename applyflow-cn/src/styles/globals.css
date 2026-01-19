@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 255 255 255;
+  --foreground: 17 24 39;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  color: rgb(var(--foreground));
+  background: rgb(var(--background));
+}
+
+.container-responsive {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-content {
+  @apply max-w-content mx-auto px-4 md:px-6;
+}
+
+/* H5 optimizations */
+@media (max-width: 768px) {
+  .container-content {
+    @apply px-4;
+  }
+}
+
+/* Animation for generated content */
+@keyframes pulse-once {
+  0%, 100% {
+    border-color: #E5E7EB;
+  }
+  50% {
+    border-color: #111827;
+  }
+}
+
+.animate-pulse-once {
+  animation: pulse-once 1s ease-in-out;
+}

@@ -1,6 +1,14 @@
-# HR Dashboard (HackerRank-like demo)
+# ApplyFlow MVP v1.0
 
-Development clone of a simplified HackerRank dashboard using Next.js App Router and Tailwind CSS.
+Turn any job description into a tailored interview plan in minutes.
+
+## Features
+
+- **Job Tracker**: Track applications with status updates
+- **Resume Tailoring**: Generate tailored bullets and keyword gaps for each role
+- **Mock Interviews**: Practice with AI-generated questions based on your JD and resume
+- **Shareable Reports**: Get detailed feedback and share with mentors/friends
+- **Free Preview**: Try without signup - paste a JD and get 3 sample questions
 
 ## Getting Started
 
@@ -15,16 +23,28 @@ Then open `http://localhost:3000`.
 
 ## Routes
 
-- `/` – Home
-- `/dashboard` – Dashboard widgets
-- `/challenges` – List of challenges (mock)
-- `/contests` – List of contests (mock)
-- `/login` – Login form (mock)
+### Public
+- `/` – Landing page
+- `/try` – Free preview (no login required)
+- `/signup` – Sign up
+- `/login` – Log in
+- `/pricing` – Pricing information
+- `/r/:shareId` – Shareable report (public)
 
-## API (mock)
+### Authenticated
+- `/jobs` – Job tracker (list)
+- `/jobs/:id` – Job detail (preparation center)
+- `/jobs/:id/sessions/:sid` – Mock interview session
+- `/onboarding/resume` – Resume import
+- `/onboarding/first-job` – First job creation
 
-- `/api/progress`
-- `/api/contests`
-- `/api/recommended`
+## Tech Stack
 
-This is a demo for UI/UX exploration and not an official product.
+- Next.js 14 (App Router)
+- React 18
+- TypeScript
+- Tailwind CSS
+
+## MVP v1.0 Scope
+
+Desktop-first, mobile-ready. Free plan: 3 jobs, 1 session per job, 3 questions. Pro plan: unlimited jobs, 10 questions per session, detailed feedback.

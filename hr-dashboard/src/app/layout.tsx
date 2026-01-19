@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'HR Dashboard',
-  description: 'HackerRank-like dashboard clone for demo purposes'
+  title: 'ApplyFlow - Turn job descriptions into tailored interview plans',
+  description: 'Track applications, tailor your resume, practice with mock interviews, and share reports to get feedback.'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

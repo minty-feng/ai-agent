@@ -284,6 +284,8 @@ In-depth technical articles about the Seastar future architecture (in Chinese):
 | 2 | [Seastar Reactor 模型与事件驱动调度](docs/02-reactor-model-scheduling.md) | Share-nothing per-core architecture, reactor event loop, task queues, cross-shard communication, I/O scheduling |
 | 3 | [工业级 Future 实现优化之路](docs/03-industrial-grade-optimization.md) | Single continuation slot, task abstraction, move-only semantics, noncopyable_function SBO, utility functions |
 | 4 | [写法对比与性能分析](docs/04-comparison-and-benchmarks.md) | Extensive before/after code comparisons, benchmark analysis, best practices |
+| 5 | [Benchmark 说明文档](docs/05-benchmark-guide.md) | Benchmark scenarios, how to run, how to interpret results |
+| 6 | [简化 Future 为什么不依赖 Queue](docs/06-why-no-queue.md) | Single continuation slot vs reactor task queue, advantages and disadvantages |
 
 ## How it works / 原理简述
 

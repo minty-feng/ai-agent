@@ -50,6 +50,7 @@ The snippet below chains `then`, error recovery, `finally`, and `when_all_succee
 
 ```cpp
 #include <seastar/future.hh>
+#include <chrono>
 #include <iostream>
 #include <numeric>
 #include <thread>
@@ -85,6 +86,8 @@ int main() {
                         std::cout << "cleanup\n"; // Executes regardless of success or failure（无论成功或失败都会执行）
                     });
 
+    // Small wait to let the detached threads publish their results before calling get().
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::cout << "total = " << total.get() << "\n";
 }
 ```

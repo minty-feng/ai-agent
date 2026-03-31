@@ -135,6 +135,8 @@ future<T> make_ready(T v) {
 // Benchmark helpers
 // ---------------------------------------------------------------------------
 
+// 200K iterations balances statistical significance with reasonable runtime
+// (~0.5 s total).  Adjust if profiling on different hardware.
 static constexpr std::size_t ITERATIONS = 200'000;
 
 static void print_row(const std::string& name, double naive_us, double opt_us) {

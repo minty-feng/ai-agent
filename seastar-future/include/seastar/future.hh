@@ -133,6 +133,8 @@ class noncopyable_function;
 
 template <typename Ret, typename... Args>
 class noncopyable_function<Ret(Args...)> {
+    // SBO threshold: 32 bytes covers most lambda captures (2–4 pointers/ints)
+    // while keeping the noncopyable_function object itself cache-friendly.
     static constexpr std::size_t nr_direct = 32;
 
     struct vtable_type {
@@ -279,7 +281,7 @@ struct state {
         if (available()) {
             t->run();
         } else {
-            assert(!continuation_ && "future<T> supports at most one continuation");
+            assert(!continuation_ && "future<T> allows only one .then() continuation");
             continuation_ = std::move(t);
         }
     }
@@ -322,7 +324,7 @@ struct state<T, std::enable_if_t<std::is_void_v<T>>> {
         if (available()) {
             t->run();
         } else {
-            assert(!continuation_ && "future<void> supports at most one continuation");
+            assert(!continuation_ && "future<void> allows only one .then() continuation");
             continuation_ = std::move(t);
         }
     }
@@ -797,6 +799,10 @@ future<void> repeat(Func&& fn) {
     auto p = std::make_shared<promise<void>>();
     auto result = p->get_future();
 
+    // std::function is used here (not noncopyable_function) because the step
+    // lambda must be stored in a shared_ptr and captured by value inside
+    // then_wrapped closures; std::function is appropriate since all captures
+    // (shared_ptrs) are copyable.
     auto step = std::make_shared<std::function<void()>>();
     *step = [body, p, step]() {
         try {

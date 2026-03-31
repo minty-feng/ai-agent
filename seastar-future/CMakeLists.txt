@@ -52,3 +52,13 @@ if(SEASTAR_FUTURE_BUILD_EXAMPLES)
     target_link_libraries(example_threadpool PRIVATE Threads::Threads)
     target_link_libraries(example_future_then PRIVATE Threads::Threads)
 endif()
+
+# ---------------------------------------------------------------------------
+# Benchmarks
+# ---------------------------------------------------------------------------
+option(SEASTAR_FUTURE_BUILD_BENCHMARKS "Build benchmarks" ON)
+if(SEASTAR_FUTURE_BUILD_BENCHMARKS)
+    add_executable(future_benchmark benchmarks/future_benchmark.cpp)
+    target_link_libraries(future_benchmark PRIVATE seastar-future)
+    target_compile_options(future_benchmark PRIVATE -O2)
+endif()

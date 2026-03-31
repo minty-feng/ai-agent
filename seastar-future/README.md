@@ -4,6 +4,22 @@ Standalone, header-only C++17 library that extracts the core **future / promise 
 
 Drop `include/seastar/future.hh` into your project — no other dependencies required.
 
+## Industrial-grade improvements (v2)
+
+This version includes significant optimisations over a naive future implementation:
+
+| Optimisation | Before | After |
+|---|---|---|
+| Continuation storage | `vector<function<void()>>` | Single `unique_ptr<task>` slot |
+| Continuation callable | `std::function` (copyable) | Polymorphic `task` (move-only) |
+| Future semantics | Copyable (shared_ptr) | **Move-only** (no accidental sharing) |
+| Promise semantics | Copyable | **Move-only** |
+| Callable wrapper | — | `noncopyable_function<Sig>` with SBO |
+| Utilities | — | `do_with`, `repeat`, `parallel_for_each` |
+| Scheduling | no noexcept | `noexcept` on hot paths |
+
+See the [benchmark results](#benchmarks) and [architecture articles](#articles) for details.
+
 ## Quick start
 
 ```cpp
@@ -43,6 +59,11 @@ int main() {
 | Ready future | `make_ready_future(val)` / `make_ready_future()` |
 | Failed future | `make_exception_future<T>(ex)` |
 | Wait all | `when_all_succeed(vector<future<T>>)` |
+| Keep-alive helper | `do_with(obj, fn)` |
+| Async loop | `repeat(fn)` + `stop_iteration` |
+| Concurrent iteration | `parallel_for_each(begin, end, fn)` |
+| Move-only callable | `noncopyable_function<Sig>` |
+| Default void | `future<>` = `future<void>`, `promise<>` = `promise<void>` |
 
 ## Classic usage example / 经典用法示例
 
@@ -92,12 +113,56 @@ int main() {
 }
 ```
 
+## New utility functions / 新增工具函数
+
+### do_with — keep objects alive across continuation chains
+
+```cpp
+// Manages lifetime of a temporary across an async chain
+seastar::do_with(std::vector<int>{1, 2, 3}, [](auto& vec) {
+    return seastar::make_ready_future()
+        .then([&vec]() { vec.push_back(4); })
+        .then([&vec]() { std::cout << "size = " << vec.size() << "\n"; });
+});
+```
+
+### repeat — async loop with stop_iteration
+
+```cpp
+int counter = 0;
+auto f = seastar::repeat([&counter]() {
+    if (++counter >= 10)
+        return seastar::make_ready_future(seastar::stop_iteration::yes);
+    return seastar::make_ready_future(seastar::stop_iteration::no);
+});
+```
+
+### parallel_for_each — concurrent iteration
+
+```cpp
+std::vector<int> items = {1, 2, 3, 4, 5};
+seastar::parallel_for_each(items.begin(), items.end(), [](int v) {
+    std::cout << "processing " << v << "\n";
+    return seastar::make_ready_future();
+});
+```
+
+### noncopyable_function — move-only callable with SBO
+
+```cpp
+// Supports move-only captures (unlike std::function)
+auto conn = std::make_unique<Connection>(fd);
+seastar::noncopyable_function<void()> cleanup = [c = std::move(conn)]() {
+    c->close();
+};
+cleanup();
+```
+
 ## More examples / 更多示例
 
 ### 1) Error recovery fallback / 错误回退
 
 ```cpp
-// Start from a failed future and recover with a default value.
 auto recovered = seastar::make_exception_future<int>(std::runtime_error("oops"))
     .handle_exception([](std::exception_ptr ep) {
         try { std::rethrow_exception(ep); }
@@ -171,7 +236,7 @@ The descriptions below summarise how Seastar's architecture shapes the way you u
 
 ## Runnable examples / 可运行示例
 
-The `examples/` directory contains four executables that **actually use** the `seastar::future` library (not just printed descriptions).  Build them with CMake:
+The `examples/` directory contains four executables that **actually use** the `seastar::future` library.  Build them with CMake:
 
 ```bash
 cd seastar-future/build
@@ -189,18 +254,52 @@ cmake --build .
 | `example_threadpool` | A small thread pool where `submit()` returns `future<T>`. Shows parallel work dispatch, result gathering via `when_all_succeed`, post-processing `.then()` chains, and error propagation from workers. |
 | `example_future_then` | Auto-unwrap, error recovery, `.finally`, deferred resolution via `promise`, `when_all_succeed` fan-out/fan-in, and `discard_result`. |
 
+## Benchmarks
+
+Build and run the benchmark to compare the optimised implementation against a naive baseline:
+
+```bash
+cd seastar-future/build
+cmake --build . --target future_benchmark
+./future_benchmark
+```
+
+Typical results (single-threaded, GCC 13, -O2):
+
+| Benchmark | Naive (µs) | Optimised (µs) | Speedup |
+|-----------|-----------|----------------|---------|
+| Ready-chain (3-step, 200K×) | ~50,400 | ~37,000 | **1.36×** |
+| Deferred (2-step, 200K×) | ~44,700 | ~30,200 | **1.48×** |
+| Promise/future pair (200K×) | ~9,150 | ~4,980 | **1.84×** |
+| Ownership transfer (200K×) | ~7,620 | ~3,240 | **2.35×** |
+| Long chain (depth=100, 1K×) | ~7,160 | ~5,250 | **1.36×** |
+
+## Articles
+
+In-depth technical articles about the Seastar future architecture (in Chinese):
+
+| # | Title | Topics |
+|---|-------|--------|
+| 1 | [Seastar 原版 Future/Promise 架构深度解析](docs/01-seastar-future-architecture.md) | Queue-based continuation model, `future_state<T>`, promise-future pairing, auto-unwrap, error propagation |
+| 2 | [Seastar Reactor 模型与事件驱动调度](docs/02-reactor-model-scheduling.md) | Share-nothing per-core architecture, reactor event loop, task queues, cross-shard communication, I/O scheduling |
+| 3 | [工业级 Future 实现优化之路](docs/03-industrial-grade-optimization.md) | Single continuation slot, task abstraction, move-only semantics, noncopyable_function SBO, utility functions |
+| 4 | [写法对比与性能分析](docs/04-comparison-and-benchmarks.md) | Extensive before/after code comparisons, benchmark analysis, best practices |
+
 ## How it works / 原理简述
 
-- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, `value` / `exception_ptr`, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义。) 
-- `promise::set_value` / `set_exception` flips the state and calls `run_continuations`, running callbacks that were registered while pending（pending 期间注册的回调会被依次触发。)
-- `.then` schedules the continuation immediately when the state is ready or defers it until resolution; if it returns `future<U>` we auto-unwrap via `forward_to` to avoid `future<future<...>>`（保持链式体验。)
-- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting（首个错误立即传递给聚合 promise。)
+- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, `value` / `exception_ptr`, and a **single continuation** (as `unique_ptr<task>`, matching the original Seastar model).
+- `promise::set_value` / `set_exception` flips the state and calls `run_continuation`, which moves the stored task and runs it.
+- `.then` schedules the continuation immediately when the state is ready or defers it until resolution; if it returns `future<U>` we auto-unwrap via `forward_to`.
+- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting.
+- Both `future<T>` and `promise<T>` are **move-only**, preventing accidental copies and matching Seastar's ownership model.
 
 ## Differences from Seastar upstream / 与 Seastar 原版的差异
 
-- API mirrors Seastar, but this header-only extraction uses the C++ standard library (`std::shared_ptr`, `std::function`, `std::optional`) instead of intrusive_ptr and custom continuation queues（牺牲部分优化，换取零依赖、可移植实现。)
-- Continuations run synchronously on the current call stack (`schedule` executes immediately when ready), not on Seastar's reactor/scheduling groups/blocked-futures machinery（因此可在任意线程使用，但不提供调度公平性。)
-- `future::get()` throws if the value is not ready, which suits examples/tests; Seastar's runtime is typically driven by its event loop rather than synchronous waiting（原版偏向协程/事件驱动场景。)
+- API mirrors Seastar, but this header-only extraction uses `std::shared_ptr` for state sharing instead of intrusive_ptr (zero-dependency trade-off).
+- **Single continuation slot** with polymorphic `task` — matches the original Seastar pattern of one `.then()` per future.
+- Continuations run synchronously on the current call stack (no reactor scheduling groups), suitable for any thread.
+- `future::get()` throws if the value is not ready; Seastar's runtime is typically driven by its event loop.
+- `noncopyable_function` provides move-only callable semantics matching Seastar's approach.
 
 ## Build & test
 
@@ -210,6 +309,9 @@ mkdir build && cd build
 cmake ..
 cmake --build .
 ctest --output-on-failure
+
+# Run benchmark
+./future_benchmark
 ```
 
 ## Requirements

@@ -21,10 +21,34 @@ target_include_directories(seastar-future INTERFACE
 # Tests
 # ---------------------------------------------------------------------------
 option(SEASTAR_FUTURE_BUILD_TESTS "Build tests" ON)
+option(SEASTAR_FUTURE_BUILD_EXAMPLES "Build examples" ON)
 
 if(SEASTAR_FUTURE_BUILD_TESTS)
     enable_testing()
     add_executable(future_test tests/future_test.cpp)
     target_link_libraries(future_test PRIVATE seastar-future)
     add_test(NAME future_test COMMAND future_test)
+endif()
+
+# ---------------------------------------------------------------------------
+# Examples — real future/then code demonstrating network, memory, thread-pool,
+# and general future/then patterns.
+# ---------------------------------------------------------------------------
+if(SEASTAR_FUTURE_BUILD_EXAMPLES)
+    add_executable(example_network    examples/network_example.cpp)
+    target_link_libraries(example_network    PRIVATE seastar-future)
+
+    add_executable(example_memory     examples/memory_example.cpp)
+    target_link_libraries(example_memory     PRIVATE seastar-future)
+
+    add_executable(example_threadpool examples/threadpool_example.cpp)
+    target_link_libraries(example_threadpool PRIVATE seastar-future)
+
+    add_executable(example_future_then examples/future_then_example.cpp)
+    target_link_libraries(example_future_then PRIVATE seastar-future)
+
+    find_package(Threads REQUIRED)
+    target_link_libraries(example_network    PRIVATE Threads::Threads)
+    target_link_libraries(example_threadpool PRIVATE Threads::Threads)
+    target_link_libraries(example_future_then PRIVATE Threads::Threads)
 endif()

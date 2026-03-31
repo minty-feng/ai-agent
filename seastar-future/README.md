@@ -92,6 +92,65 @@ int main() {
 }
 ```
 
+## More examples / 更多示例
+
+### 1) Error recovery fallback / 错误回退
+
+```cpp
+// Start from a failed future and recover with a default value.
+auto recovered = seastar::make_exception_future<int>(std::runtime_error("oops"))
+    .handle_exception([](std::exception_ptr ep) {
+        try { std::rethrow_exception(ep); }
+        catch (const std::exception& e) {
+            std::cerr << "recovering from: " << e.what() << "\n";
+        }
+        return 42; // fallback value（兜底返回值）
+    });
+std::cout << recovered.get() << "\n"; // prints 42
+```
+
+### 2) discard_result + finally / 丢弃结果并清理
+
+```cpp
+seastar::promise<int> p;
+auto f = p.get_future()
+    .then([](int v) { return v * 2; })
+    .discard_result()      // convert to future<void>（将结果丢弃）
+    .finally([] {          // always runs（总会执行）
+        std::cout << "cleanup done\n";
+    });
+
+p.set_value(10);
+f.get(); // waits for cleanup to finish
+```
+
+### 3) Unwrapping nested futures / 拆套嵌套 future
+
+```cpp
+seastar::promise<int> p;
+auto f = p.get_future()
+    .then([](int v) {
+        // return an inner future; outer will auto-unwrap（返回内层 future，外层自动拆套）
+        return seastar::make_ready_future<int>(v + 1)
+            .then([](int x) { return x * 3; });
+    });
+
+p.set_value(5);
+std::cout << f.get() << "\n"; // prints 18
+```
+
+### 4) Concept walkthrough executables / 概念讲解可执行程序
+
+See `examples/` for three small binaries you can build via CMake:
+
+- `seastar_example_network` — reactor-per-core network model and shard-local I/O.
+- `seastar_example_memory` — per-core memory pools and ownership guidance.
+- `seastar_example_threadpool` — cooperative scheduling vs. thread-pool handoff.
+- `seastar_example_future_then` — why `.then` is ergonomic (auto-unwrap, shard-local, error propagation).
+- `seastar_example_future_then_primer` — printed crib notes plus a tiny auto-unwrap + recovery demo.
+
+这些示例通过打印要点介绍 Seastar 在网络、内存、线程池/调度上的核心理念，便于快速了解架构取舍。
+
 ## How it works / 原理简述
 
 - Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, `value` / `exception_ptr`, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义。) 

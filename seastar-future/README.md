@@ -55,7 +55,8 @@ The snippet below chains `then`, error recovery, `finally`, and `when_all_succee
 #include <thread>
 #include <vector>
 
-// 通过线程模拟异步生产者，真实场景可换成回调 / 事件触发 set_value。
+// Simulate async producer with a thread; real scenarios can trigger set_value via callbacks/events.
+// （通过线程模拟异步生产者，真实场景可换成回调 / 事件触发 set_value。）
 seastar::future<int> async_add(int a, int b) {
     seastar::promise<int> p;
     auto f = p.get_future();
@@ -78,10 +79,10 @@ int main() {
                         catch (const std::exception& e) {
                             std::cerr << "error: " << e.what() << "\n";
                         }
-                        return 0; // 兜底返回，继续链路
+                        return 0; // Fallback return to keep the chain going（兜底返回，继续链路）
                     })
                     .finally([] {
-                        std::cout << "cleanup\n"; // 无论成功或失败都会执行
+                        std::cout << "cleanup\n"; // Executes regardless of success or failure（无论成功或失败都会执行）
                     });
 
     std::cout << "total = " << total.get() << "\n";

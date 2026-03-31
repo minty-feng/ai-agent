@@ -94,16 +94,16 @@ int main() {
 
 ## How it works / 原理简述
 
-- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, `value` / `exception_ptr`, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义)。
-- `promise::set_value` / `set_exception` flips the state and calls `run_continuations`, running callbacks that were registered while pending（pending 期间注册的回调会被依次触发）。
-- `.then` schedules the continuation immediately when the state is ready or defers it until resolution; if it returns `future<U>` we auto-unwrap via `forward_to` to avoid `future<future<...>>`（保持链式体验）。
-- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting（首个错误立即传递给聚合 promise）。
+- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, `value` / `exception_ptr`, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义。) 
+- `promise::set_value` / `set_exception` flips the state and calls `run_continuations`, running callbacks that were registered while pending（pending 期间注册的回调会被依次触发。)
+- `.then` schedules the continuation immediately when the state is ready or defers it until resolution; if it returns `future<U>` we auto-unwrap via `forward_to` to avoid `future<future<...>>`（保持链式体验。)
+- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting（首个错误立即传递给聚合 promise。)
 
 ## Differences from Seastar upstream / 与 Seastar 原版的差异
 
-- API mirrors Seastar, but this header-only extraction uses the C++ standard library (`std::shared_ptr`, `std::function`, `std::optional`) instead of intrusive_ptr and custom continuation queues（牺牲部分优化，换取零依赖、可移植实现）。
-- Continuations run synchronously on the current call stack (`schedule` executes immediately when ready), not on Seastar's reactor/scheduling groups/blocked-futures machinery（因此可在任意线程使用，但不提供调度公平性）。
-- `future::get()` throws if the value is not ready, which suits examples/tests; Seastar's runtime is typically driven by its event loop rather than synchronous waiting（原版偏向协程/事件驱动场景）。
+- API mirrors Seastar, but this header-only extraction uses the C++ standard library (`std::shared_ptr`, `std::function`, `std::optional`) instead of intrusive_ptr and custom continuation queues（牺牲部分优化，换取零依赖、可移植实现。)
+- Continuations run synchronously on the current call stack (`schedule` executes immediately when ready), not on Seastar's reactor/scheduling groups/blocked-futures machinery（因此可在任意线程使用，但不提供调度公平性。)
+- `future::get()` throws if the value is not ready, which suits examples/tests; Seastar's runtime is typically driven by its event loop rather than synchronous waiting（原版偏向协程/事件驱动场景。)
 
 ## Build & test
 

@@ -359,7 +359,6 @@ TEST(when_all_succeed_fails) {
 }
 
 TEST(when_all_succeed_void) {
-    int counter = 0;
     std::vector<seastar::future<void>> futs;
     futs.push_back(seastar::make_ready_future());
     futs.push_back(seastar::make_ready_future());

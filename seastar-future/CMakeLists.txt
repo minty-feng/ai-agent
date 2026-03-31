@@ -31,21 +31,24 @@ if(SEASTAR_FUTURE_BUILD_TESTS)
 endif()
 
 # ---------------------------------------------------------------------------
-# Examples (informational, no runtime deps)
+# Examples — real future/then code demonstrating network, memory, thread-pool,
+# and general future/then patterns.
 # ---------------------------------------------------------------------------
 if(SEASTAR_FUTURE_BUILD_EXAMPLES)
-    add_executable(seastar_example_network examples/network_overview.cpp)
-    target_link_libraries(seastar_example_network PRIVATE seastar-future)
+    add_executable(example_network    examples/network_example.cpp)
+    target_link_libraries(example_network    PRIVATE seastar-future)
 
-    add_executable(seastar_example_memory examples/memory_overview.cpp)
-    target_link_libraries(seastar_example_memory PRIVATE seastar-future)
+    add_executable(example_memory     examples/memory_example.cpp)
+    target_link_libraries(example_memory     PRIVATE seastar-future)
 
-    add_executable(seastar_example_threadpool examples/threadpool_overview.cpp)
-    target_link_libraries(seastar_example_threadpool PRIVATE seastar-future)
+    add_executable(example_threadpool examples/threadpool_example.cpp)
+    target_link_libraries(example_threadpool PRIVATE seastar-future)
 
-    add_executable(seastar_example_future_then examples/future_then_overview.cpp)
-    target_link_libraries(seastar_example_future_then PRIVATE seastar-future)
+    add_executable(example_future_then examples/future_then_example.cpp)
+    target_link_libraries(example_future_then PRIVATE seastar-future)
 
-    add_executable(seastar_example_future_then_primer examples/future_then_primer.cpp)
-    target_link_libraries(seastar_example_future_then_primer PRIVATE seastar-future)
+    find_package(Threads REQUIRED)
+    target_link_libraries(example_network    PRIVATE Threads::Threads)
+    target_link_libraries(example_threadpool PRIVATE Threads::Threads)
+    target_link_libraries(example_future_then PRIVATE Threads::Threads)
 endif()

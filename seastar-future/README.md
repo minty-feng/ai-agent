@@ -139,17 +139,55 @@ p.set_value(5);
 std::cout << f.get() << "\n"; // prints 18
 ```
 
-### 4) Concept walkthrough executables / 概念讲解可执行程序
+## Seastar concepts / Seastar 核心概念
 
-See `examples/` for three small binaries you can build via CMake:
+The descriptions below summarise how Seastar's architecture shapes the way you use `future`/`.then()`.
 
-- `seastar_example_network` — reactor-per-core network model and shard-local I/O.
-- `seastar_example_memory` — per-core memory pools and ownership guidance.
-- `seastar_example_threadpool` — cooperative scheduling vs. thread-pool handoff.
-- `seastar_example_future_then` — why `.then` is ergonomic (auto-unwrap, shard-local, error propagation).
-- `seastar_example_future_then_primer` — printed crib notes plus a tiny auto-unwrap + recovery demo.
+### Network / 网络模型
 
-这些示例通过打印要点介绍 Seastar 在网络、内存、线程池/调度上的核心理念，便于快速了解架构取舍。
+- **One reactor per CPU core** — connections stay on the owning shard, so `future.then` continuations run shard-local without extra hops.（每核一个 reactor，连接固定在所属 shard 上，continuation 默认在本 shard 执行。）
+- **Message passing between shards** avoids cross-core locks and minimises cache bouncing; use `smp::submit_to` to hop shards explicitly.（shard 间以消息传递代替共享锁，降低跨核缓存抖动。）
+- **Zero-copy friendly** — leverages kernel offloads and DMA where available; keep continuations small to benefit from reactor pacing.（贴合零拷贝 / DMA 场景，reactor 节奏要求 continuation 足够短小。）
+- **Backpressure** via `smp_service_group` and fair queueing; keep handlers fast to avoid stalling the reactor.（背压依赖公平队列，处理逻辑应保持快速。）
+
+### Memory / 内存模型
+
+- **Per-core memory pools** — keep data shard-local so `future.then` continuations avoid cross-core sharing of mutable state.（每核独立内存池，continuation 应尽量在本 shard 处理数据。）
+- **Cross-shard transfer** uses explicit serialisation / pass-by-value style; move ownership through continuations.（跨 shard 传递需显式序列化或值传递。）
+- Prefer `std::unique_ptr` / move semantics to keep ownership clear and avoid ref-count traffic.（推荐移动语义，确保所有权清晰。）
+
+### Threading & scheduling / 线程与调度
+
+- **Cooperative, reactor-driven** — avoid blocking syscalls inside `future.then` continuations.（以 reactor 驱动的协作式模型，不要在 continuation 内阻塞。）
+- Use `seastar::smp::submit_to` to hop shards; keep continuations small to preserve fairness.（跨 shard 用 `smp::submit_to`，continuation 拆得小一点保证公平。）
+- For **blocking or CPU-heavy work**, hand off to a Seastar thread pool (posix / alien) before returning to the reactor.（阻塞或重 CPU 任务先交给线程池处理。）
+
+### Why `.then()` / `future.then` 的优点
+
+- **Shard-local continuations** — avoids cross-core contention and extra context switches.（continuation 默认在本 shard 执行，减少跨核争用。）
+- **Auto-unwrap** — returning `future<T>` inside `.then()` keeps chains flat (no `future<future<T>>`).（返回 future 会自动拆套，链路扁平。）
+- **Error propagation** via `exception_ptr`, with `handle_exception` for graceful recovery.（异常自动传播，可用 handle_exception 做恢复。）
+- **`finally`** ensures cleanup runs regardless of success or failure.（finally 让清理逻辑始终执行。）
+
+## Runnable examples / 可运行示例
+
+The `examples/` directory contains four executables that **actually use** the `seastar::future` library (not just printed descriptions).  Build them with CMake:
+
+```bash
+cd seastar-future/build
+cmake --build .
+./example_network       # async network I/O pipeline
+./example_memory        # ownership transfer through continuations
+./example_threadpool    # thread-pool dispatch + when_all_succeed
+./example_future_then   # comprehensive feature tour
+```
+
+| Binary | What it demonstrates |
+|--------|---------------------|
+| `example_network` | Simulated accept → read → process → respond pipeline, all chained with `.then()`. Uses threads to mimic async I/O, `handle_exception` for error recovery, and `.finally` for connection cleanup. |
+| `example_memory` | `unique_ptr` moving through `.then()` chains (zero-copy, single-owner), `shared_ptr` fan-out with `when_all_succeed`, and error-path ownership cleanup. |
+| `example_threadpool` | A small thread pool where `submit()` returns `future<T>`. Shows parallel work dispatch, result gathering via `when_all_succeed`, post-processing `.then()` chains, and error propagation from workers. |
+| `example_future_then` | Auto-unwrap, error recovery, `.finally`, deferred resolution via `promise`, `when_all_succeed` fan-out/fan-in, and `discard_result`. |
 
 ## How it works / 原理简述
 

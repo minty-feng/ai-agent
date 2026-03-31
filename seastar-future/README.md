@@ -55,7 +55,7 @@ The snippet below chains `then`, error recovery, `finally`, and `when_all_succee
 #include <thread>
 #include <vector>
 
-// 通过线程模拟异步生产者, 真实场景可换成回调/事件触发 set_value。
+// 通过线程模拟异步生产者，真实场景可换成回调 / 事件触发 set_value。
 seastar::future<int> async_add(int a, int b) {
     seastar::promise<int> p;
     auto f = p.get_future();
@@ -78,7 +78,7 @@ int main() {
                         catch (const std::exception& e) {
                             std::cerr << "error: " << e.what() << "\n";
                         }
-                        return 0; // 兜底返回, 继续链路
+                        return 0; // 兜底返回，继续链路
                     })
                     .finally([] {
                         std::cout << "cleanup\n"; // 无论成功或失败都会执行
@@ -90,10 +90,10 @@ int main() {
 
 ## How it works / 原理简述
 
-- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, value/exception_ptr, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义).
-- `promise::set_value` / `set_exception` flips the state and calls `run_continuations`, running callbacks that were registered while pending（pending 期间注册的回调会被依次触发）.
-- `.then` uses `_state->schedule` to run or defer a continuation; if it returns `future<U>` we auto-unwrap via `forward_to` to avoid `future<future<...>>`（保持链式体验）.
-- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting（首个错误立即传递给聚合 promise）.
+- Each `future<T>`/`promise<T>` pair shares an `internal::state<T>` that stores status, value/exception_ptr, and queued continuations (参见 `include/seastar/future.hh` 中的 `state` 定义）。
+- `promise::set_value` / `set_exception` flips the state and calls `run_continuations`, running callbacks that were registered while pending（pending 期间注册的回调会被依次触发）。
+- `.then` uses `_state->schedule` to run or defer a continuation; if it returns `future<U>` we auto-unwrap via `forward_to` to avoid `future<future<...>>`（保持链式体验）。
+- `.handle_exception` / `.finally` are built on `then_wrapped` for recovery and cleanup, and `when_all_succeed` aggregates multiple futures with the first error short-circuiting（首个错误立即传递给聚合 promise）。
 
 ## Differences from Seastar upstream / 与 Seastar 原版的差异
 

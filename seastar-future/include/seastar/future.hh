@@ -835,7 +835,11 @@ template <typename Iterator, typename Func>
 future<void> parallel_for_each(Iterator begin, Iterator end, Func&& fn) {
     std::vector<future<void>> futs;
     for (auto it = begin; it != end; ++it) {
-        futs.push_back(fn(*it));
+        try {
+            futs.push_back(fn(*it));
+        } catch (...) {
+            futs.push_back(make_exception_future<void>(std::current_exception()));
+        }
     }
     return when_all_succeed(std::move(futs));
 }

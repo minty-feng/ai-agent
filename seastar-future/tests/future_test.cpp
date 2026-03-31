@@ -417,6 +417,223 @@ TEST(forward_to_promise) {
 }
 
 // ===========================================================================
+// Move-only semantics
+// ===========================================================================
+
+TEST(future_is_move_only) {
+    // future must be movable
+    auto f1 = seastar::make_ready_future(42);
+    auto f2 = std::move(f1);
+    ASSERT_TRUE(f2.available());
+    ASSERT_EQ(f2.get(), 42);
+
+    // Compile-time check: future is NOT copyable
+    ASSERT_TRUE(!std::is_copy_constructible_v<seastar::future<int>>);
+    ASSERT_TRUE(!std::is_copy_assignable_v<seastar::future<int>>);
+    ASSERT_TRUE(std::is_move_constructible_v<seastar::future<int>>);
+    ASSERT_TRUE(std::is_move_assignable_v<seastar::future<int>>);
+}
+
+TEST(promise_is_move_only) {
+    seastar::promise<int> p1;
+    auto f = p1.get_future();
+    seastar::promise<int> p2 = std::move(p1);
+    p2.set_value(99);
+    ASSERT_EQ(f.get(), 99);
+
+    ASSERT_TRUE(!std::is_copy_constructible_v<seastar::promise<int>>);
+    ASSERT_TRUE(!std::is_copy_assignable_v<seastar::promise<int>>);
+}
+
+// ===========================================================================
+// noncopyable_function
+// ===========================================================================
+
+TEST(noncopyable_function_basic) {
+    seastar::noncopyable_function<int(int)> fn = [](int x) { return x * 2; };
+    ASSERT_TRUE(bool(fn));
+    ASSERT_EQ(fn(21), 42);
+}
+
+TEST(noncopyable_function_move_only_capture) {
+    auto ptr = std::make_unique<int>(100);
+    seastar::noncopyable_function<int()> fn = [p = std::move(ptr)]() {
+        return *p;
+    };
+    ASSERT_EQ(fn(), 100);
+}
+
+TEST(noncopyable_function_move) {
+    seastar::noncopyable_function<int()> fn1 = []() { return 7; };
+    seastar::noncopyable_function<int()> fn2 = std::move(fn1);
+    ASSERT_FALSE(bool(fn1));
+    ASSERT_TRUE(bool(fn2));
+    ASSERT_EQ(fn2(), 7);
+}
+
+TEST(noncopyable_function_is_not_copyable) {
+    ASSERT_TRUE(!std::is_copy_constructible_v<seastar::noncopyable_function<void()>>);
+    ASSERT_TRUE(!std::is_copy_assignable_v<seastar::noncopyable_function<void()>>);
+    ASSERT_TRUE(std::is_move_constructible_v<seastar::noncopyable_function<void()>>);
+}
+
+TEST(noncopyable_function_void_return) {
+    int side = 0;
+    seastar::noncopyable_function<void()> fn = [&side]() { side = 42; };
+    fn();
+    ASSERT_EQ(side, 42);
+}
+
+TEST(noncopyable_function_large_capture) {
+    // Force heap allocation (exceeds SBO)
+    std::array<char, 256> big{};
+    big[0] = 'A';
+    seastar::noncopyable_function<char()> fn = [big]() { return big[0]; };
+    ASSERT_EQ(fn(), 'A');
+
+    // Move the large-capture function
+    auto fn2 = std::move(fn);
+    ASSERT_FALSE(bool(fn));
+    ASSERT_EQ(fn2(), 'A');
+}
+
+// ===========================================================================
+// do_with
+// ===========================================================================
+
+TEST(do_with_single) {
+    auto f = seastar::do_with(std::vector<int>{1, 2, 3}, [](auto& vec) {
+        return seastar::make_ready_future()
+            .then([&vec]() {
+                vec.push_back(4);
+                return static_cast<int>(vec.size());
+            });
+    });
+    ASSERT_TRUE(f.available());
+    ASSERT_EQ(f.get(), 4);
+}
+
+TEST(do_with_two_args) {
+    auto f = seastar::do_with(std::string("hello"), std::string(" world"),
+        [](auto& a, auto& b) {
+            return seastar::make_ready_future(a + b);
+        });
+    ASSERT_TRUE(f.available());
+    ASSERT_EQ(f.get(), std::string("hello world"));
+}
+
+TEST(do_with_deferred) {
+    seastar::promise<int> p;
+    auto f = seastar::do_with(std::vector<int>{}, [&p](auto& vec) {
+        return p.get_future().then([&vec](int v) {
+            vec.push_back(v);
+            return static_cast<int>(vec.size());
+        });
+    });
+    ASSERT_FALSE(f.available());
+    p.set_value(42);
+    ASSERT_TRUE(f.available());
+    ASSERT_EQ(f.get(), 1);
+}
+
+// ===========================================================================
+// repeat / stop_iteration
+// ===========================================================================
+
+TEST(repeat_immediate) {
+    int counter = 0;
+    auto f = seastar::repeat([&counter]() {
+        if (++counter >= 5) {
+            return seastar::make_ready_future(seastar::stop_iteration::yes);
+        }
+        return seastar::make_ready_future(seastar::stop_iteration::no);
+    });
+    ASSERT_TRUE(f.available());
+    ASSERT_FALSE(f.failed());
+    ASSERT_EQ(counter, 5);
+}
+
+TEST(repeat_deferred) {
+    int counter = 0;
+    std::vector<seastar::promise<seastar::stop_iteration>> promises;
+    for (int i = 0; i < 3; ++i) {
+        promises.emplace_back();
+    }
+
+    int idx = 0;
+    auto f = seastar::repeat([&counter, &promises, &idx]() {
+        ++counter;
+        return promises[idx++].get_future();
+    });
+
+    ASSERT_FALSE(f.available());
+    promises[0].set_value(seastar::stop_iteration::no);
+    ASSERT_FALSE(f.available());
+    promises[1].set_value(seastar::stop_iteration::no);
+    ASSERT_FALSE(f.available());
+    promises[2].set_value(seastar::stop_iteration::yes);
+    ASSERT_TRUE(f.available());
+    ASSERT_FALSE(f.failed());
+    ASSERT_EQ(counter, 3);
+}
+
+TEST(repeat_error) {
+    auto f = seastar::repeat([]() -> seastar::future<seastar::stop_iteration> {
+        throw std::runtime_error("loop error");
+    });
+    ASSERT_TRUE(f.available());
+    ASSERT_TRUE(f.failed());
+}
+
+// ===========================================================================
+// parallel_for_each
+// ===========================================================================
+
+TEST(parallel_for_each_basic) {
+    std::vector<int> items = {1, 2, 3, 4, 5};
+    int sum = 0;
+    auto f = seastar::parallel_for_each(items.begin(), items.end(),
+        [&sum](int v) {
+            sum += v;
+            return seastar::make_ready_future();
+        });
+    ASSERT_TRUE(f.available());
+    ASSERT_FALSE(f.failed());
+    ASSERT_EQ(sum, 15);
+}
+
+TEST(parallel_for_each_empty) {
+    std::vector<int> items;
+    auto f = seastar::parallel_for_each(items.begin(), items.end(),
+        [](int) { return seastar::make_ready_future(); });
+    ASSERT_TRUE(f.available());
+    ASSERT_FALSE(f.failed());
+}
+
+TEST(parallel_for_each_error) {
+    std::vector<int> items = {1, 2, 3};
+    auto f = seastar::parallel_for_each(items.begin(), items.end(),
+        [](int v) -> seastar::future<void> {
+            if (v == 2) throw std::runtime_error("bad item");
+            return seastar::make_ready_future();
+        });
+    ASSERT_TRUE(f.available());
+    ASSERT_TRUE(f.failed());
+}
+
+// ===========================================================================
+// Default template parameter (future<> == future<void>)
+// ===========================================================================
+
+TEST(default_template_parameter) {
+    seastar::promise<> p;  // same as promise<void>
+    auto f = p.get_future();
+    p.set_value();
+    ASSERT_TRUE(f.available());
+    ASSERT_FALSE(f.failed());
+}
+
+// ===========================================================================
 
 int main() {
     std::cout << "\n" << tests_passed << "/" << tests_run << " tests passed.\n";

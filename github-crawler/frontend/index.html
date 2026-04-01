@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GitHub Markdown Crawler</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐙</text></svg>" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -163,24 +164,6 @@
           <label>编程语言</label>
           <input type="text" id="language" value="Python" class="input input-sm" />
         </div>
-
-        <!-- Pagination controls -->
-        <div class="search-pagination-row">
-          <div class="pagination-field">
-            <label>每页条数</label>
-            <select id="perPage" class="input input-sm">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-              <option value="50">50</option>
-            </select>
-          </div>
-          <div class="pagination-field">
-            <label>页码</label>
-            <input type="number" id="pageNum" value="1" min="1" class="input input-sm" />
-          </div>
-        </div>
       </div>
 
       <!-- Results -->
@@ -194,7 +177,8 @@
             <thead>
               <tr>
                 <th>仓库</th>
-                <th>描述</th>
+                <th>主题</th>
+                <th class="col-created">创建时间</th>
                 <th class="col-stars">⭐ Stars</th>
                 <th class="col-lang">语言</th>
                 <th class="col-action">操作</th>
@@ -205,6 +189,17 @@
         </div>
         <!-- Bottom pagination -->
         <div class="results-footer">
+          <div class="per-page-wrap">
+            <label for="perPage">每页</label>
+            <select id="perPage" class="input input-sm">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+            <span>条</span>
+          </div>
           <button class="btn btn-outline btn-sm" id="prevPageBtn" disabled>← 上一页</button>
           <span id="pageInfo" class="page-info"></span>
           <button class="btn btn-outline btn-sm" id="nextPageBtn">下一页 →</button>

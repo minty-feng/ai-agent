@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -29,6 +30,12 @@ app.add_middleware(
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 if FRONTEND_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def root() -> FileResponse:
+    """Serve the frontend index page at the root URL."""
+    return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
 # ── Models ────────────────────────────────────────────────────────────────────
@@ -149,9 +156,11 @@ async def search_repos(body: SearchRequest) -> dict[str, Any]:
                 "owner": item["owner"]["login"],
                 "name": item["name"],
                 "description": item.get("description", ""),
+                "topics": item.get("topics", []),
                 "stars": item["stargazers_count"],
                 "language": item.get("language", ""),
                 "url": item["html_url"],
+                "created_at": item.get("created_at", ""),
             }
         )
     return {

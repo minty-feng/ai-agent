@@ -462,6 +462,33 @@ td a:hover {
   white-space: nowrap;
 }
 
+.topic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.topic-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  white-space: nowrap;
+}
+
+.topic-badge--muted {
+  background: rgba(139, 148, 158, 0.12);
+  color: var(--text-muted);
+}
+
+.col-created {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .lang-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -484,6 +511,19 @@ td a:hover {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+.per-page-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+
+.per-page-wrap select {
+  width: auto;
 }
 
 .page-info {

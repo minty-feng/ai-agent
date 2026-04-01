@@ -24,6 +24,8 @@ import { Command } from "@commander-js/extra-typings"
 import { chatCommand } from "./commands/chat.js"
 import { runCommand } from "./commands/run.js"
 import { versionCommand } from "./commands/version.js"
+import { calcCommand } from "./commands/calc.js"
+import { sysCommand } from "./commands/sys.js"
 
 // ── 2. Root program ───────────────────────────────────────────────────────
 const program = new Command()
@@ -36,6 +38,8 @@ const program = new Command()
 chatCommand(program)
 runCommand(program)
 versionCommand(program)
+calcCommand(program)
+sysCommand(program)
 
 // ── 4. Parse & dispatch ───────────────────────────────────────────────────
 // Await prefetch before running so the first subcommand handler has config.

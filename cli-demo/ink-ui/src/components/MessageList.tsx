@@ -14,7 +14,7 @@ import React from "react"
 import { Box, Text } from "ink"
 
 export type Message = {
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system"
   text: string
 }
 
@@ -24,7 +24,7 @@ type Props = {
 
 export function MessageList({ messages }: Props) {
   if (messages.length === 0) {
-    return <Text dimColor>No messages yet — type something below.</Text>
+    return <Text dimColor>No messages yet — type something below, or /help for commands.</Text>
   }
 
   return (
@@ -36,10 +36,16 @@ export function MessageList({ messages }: Props) {
               <Text color="cyan" bold>you›</Text>
               <Text>{msg.text}</Text>
             </>
-          ) : (
+          ) : msg.role === "assistant" ? (
             <>
               <Text color="magenta" bold>ai› </Text>
               <Text color="white">{msg.text}</Text>
+            </>
+          ) : (
+            /* system messages: command output, errors, info */
+            <>
+              <Text color="yellow" bold>sys›</Text>
+              <Text color="yellow">{msg.text}</Text>
             </>
           )}
         </Box>

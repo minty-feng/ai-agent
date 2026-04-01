@@ -3,9 +3,11 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel
+
+from storage import StorageType
 
 CONFIG_FILE = Path(__file__).parent / "app_config.json"
 DEFAULT_STORAGE_DIR = str(Path(__file__).parent / "downloads")
@@ -34,7 +36,7 @@ class StorageSettings(BaseModel):
         (elasticsearch) Elasticsearch index name.
     """
 
-    type: Literal["local", "sql", "elasticsearch"] = "local"
+    type: StorageType = "local"
     # Local backend options
     storage_dir: str = DEFAULT_STORAGE_DIR
     replace_slash: bool = True

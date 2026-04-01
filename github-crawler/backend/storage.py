@@ -8,8 +8,13 @@ from __future__ import annotations
 
 import os
 import re
+import threading
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Literal
+
+# Shared constant for valid storage backend types.
+StorageType = Literal["local", "sql", "elasticsearch"]
+STORAGE_TYPES: tuple[str, ...] = ("local", "sql", "elasticsearch")
 
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
@@ -196,6 +201,7 @@ class SQLStorageBackend(StorageBackend):
 
     def __init__(self, connection_url: str) -> None:
         self.connection_url = connection_url
+        self._lock = threading.Lock()
         self._ensure_table()
 
     def _get_db_path(self) -> str:
@@ -211,53 +217,62 @@ class SQLStorageBackend(StorageBackend):
         db_dir = os.path.dirname(db_path)
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
-        conn = sqlite3.connect(db_path)
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS markdown_files (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                owner       TEXT NOT NULL,
-                repo        TEXT NOT NULL,
-                file_path   TEXT NOT NULL,
-                content     TEXT NOT NULL,
-                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(owner, repo, file_path)
-            )
-            """
-        )
-        conn.commit()
-        conn.close()
+        with self._lock:
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS markdown_files (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        owner       TEXT NOT NULL,
+                        repo        TEXT NOT NULL,
+                        file_path   TEXT NOT NULL,
+                        content     TEXT NOT NULL,
+                        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(owner, repo, file_path)
+                    )
+                    """
+                )
+                conn.commit()
+            finally:
+                conn.close()
 
     async def save(self, owner: str, repo: str, file_path: str, content: str) -> str:
         import sqlite3
 
         db_path = self._get_db_path()
-        conn = sqlite3.connect(db_path)
-        conn.execute(
-            """
-            INSERT INTO markdown_files (owner, repo, file_path, content)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(owner, repo, file_path) DO UPDATE SET
-                content = excluded.content,
-                created_at = CURRENT_TIMESTAMP
-            """,
-            (owner, repo, file_path, content),
-        )
-        conn.commit()
-        conn.close()
+        with self._lock:
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO markdown_files (owner, repo, file_path, content)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(owner, repo, file_path) DO UPDATE SET
+                        content = excluded.content,
+                        created_at = CURRENT_TIMESTAMP
+                    """,
+                    (owner, repo, file_path, content),
+                )
+                conn.commit()
+            finally:
+                conn.close()
         return f"sql://{owner}/{repo}/{file_path}"
 
     async def list_files(self, owner: str, repo: str) -> list[str]:
         import sqlite3
 
         db_path = self._get_db_path()
-        conn = sqlite3.connect(db_path)
-        cursor = conn.execute(
-            "SELECT file_path FROM markdown_files WHERE owner = ? AND repo = ? ORDER BY file_path",
-            (owner, repo),
-        )
-        results = [row[0] for row in cursor.fetchall()]
-        conn.close()
+        with self._lock:
+            conn = sqlite3.connect(db_path)
+            try:
+                cursor = conn.execute(
+                    "SELECT file_path FROM markdown_files WHERE owner = ? AND repo = ? ORDER BY file_path",
+                    (owner, repo),
+                )
+                results = [row[0] for row in cursor.fetchall()]
+            finally:
+                conn.close()
         return results
 
 

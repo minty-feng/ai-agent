@@ -1,7 +1,7 @@
 """FastAPI application — GitHub Markdown Crawler."""
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from config import AppConfig, StorageSettings, ensure_storage_dir, load_config, save_config
 from crawler import download_markdown_files
-from storage import create_backend
+from storage import StorageType, create_backend
 from strategies import Strategy
 
 app = FastAPI(
@@ -39,7 +39,7 @@ class ConfigUpdate(BaseModel):
 
     storage_dir: str | None = None
     github_token: str | None = None
-    storage_type: Literal["local", "sql", "elasticsearch"] | None = None
+    storage_type: StorageType | None = None
     replace_slash: bool | None = None
     replace_dash: bool | None = None
     separator: str | None = None

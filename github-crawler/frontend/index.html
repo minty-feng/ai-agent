@@ -3,84 +3,226 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitHub Markdown 爬虫</title>
+  <title>GitHub Markdown Crawler</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="container">
-    <h1>🐙 GitHub Markdown 爬虫</h1>
-    <p class="subtitle">搜索 GitHub 仓库，一键获取所有 Markdown 文档</p>
+  <div class="app-shell">
 
-    <!-- ── Settings Panel ─────────────────────────────────────── -->
-    <details class="card" id="settingsPanel">
-      <summary>⚙️ 配置</summary>
-      <div class="form-group">
-        <label for="storageDir">存储路径</label>
-        <input type="text" id="storageDir" placeholder="/path/to/downloads" />
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          <div>
+            <h1>GitHub Markdown Crawler</h1>
+            <p class="tagline">搜索仓库，一键获取 Markdown 文档</p>
+          </div>
+        </div>
+        <button class="btn-icon" id="settingsToggle" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
-      <div class="form-group">
-        <label for="githubToken">GitHub Token（可选，提高请求限额）</label>
-        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
-      </div>
-      <button id="saveConfigBtn" class="btn btn-secondary">💾 保存配置</button>
-      <span id="configStatus" class="status-msg"></span>
-    </details>
+    </header>
 
-    <!-- ── Search Panel ───────────────────────────────────────── -->
-    <div class="card">
-      <h2>🔍 搜索仓库</h2>
-
-      <div class="form-group">
-        <label for="strategy">搜索策略</label>
-        <select id="strategy">
-          <option value="repo_name">按仓库名称</option>
-          <option value="stars">按 Star 数</option>
-          <option value="language">按编程语言</option>
-          <option value="topic">按 Topic</option>
-        </select>
+    <!-- ── Settings Drawer ─────────────────────────────────────── -->
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <aside class="settings-drawer" id="settingsDrawer">
+      <div class="drawer-header">
+        <h2>⚙️ 设置</h2>
+        <button class="btn-icon btn-close" id="settingsClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
-      <div class="form-group">
-        <label for="query">关键词 / 仓库名</label>
-        <input type="text" id="query" placeholder="例如：awesome-python" />
+      <div class="drawer-body">
+        <!-- Token -->
+        <section class="settings-section">
+          <h3>GitHub Token</h3>
+          <p class="hint">可选，提高 API 请求限额</p>
+          <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" class="input" />
+        </section>
+
+        <!-- Storage Type -->
+        <section class="settings-section">
+          <h3>存储后端</h3>
+          <div class="radio-group">
+            <label class="radio-card" data-type="local">
+              <input type="radio" name="storageType" value="local" checked />
+              <div class="radio-card-body">
+                <span class="radio-card-icon">📁</span>
+                <span class="radio-card-label">本地文件</span>
+              </div>
+            </label>
+            <label class="radio-card" data-type="sql">
+              <input type="radio" name="storageType" value="sql" />
+              <div class="radio-card-body">
+                <span class="radio-card-icon">🗄️</span>
+                <span class="radio-card-label">SQL 数据库</span>
+              </div>
+            </label>
+            <label class="radio-card" data-type="elasticsearch">
+              <input type="radio" name="storageType" value="elasticsearch" />
+              <div class="radio-card-body">
+                <span class="radio-card-icon">🔍</span>
+                <span class="radio-card-label">Elasticsearch</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Local options -->
+        <section class="settings-section backend-options" id="localOptions">
+          <h3>本地存储选项</h3>
+          <div class="field">
+            <label for="storageDir">存储路径</label>
+            <input type="text" id="storageDir" placeholder="/path/to/downloads" class="input" />
+          </div>
+          <div class="field">
+            <label for="separator">分隔符</label>
+            <input type="text" id="separator" value="_" maxlength="1" class="input input-sm" />
+          </div>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="replaceSlash" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span>将 <code>/</code> 替换为分隔符</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="replaceDash" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span>将 <code>-</code> 替换为分隔符</span>
+          </div>
+        </section>
+
+        <!-- SQL options -->
+        <section class="settings-section backend-options" id="sqlOptions" style="display:none;">
+          <h3>SQL 数据库选项</h3>
+          <div class="field">
+            <label for="connectionUrl">连接 URL</label>
+            <input type="text" id="connectionUrl" placeholder="sqlite:///crawled.db" class="input" />
+          </div>
+        </section>
+
+        <!-- Elasticsearch options -->
+        <section class="settings-section backend-options" id="esOptions" style="display:none;">
+          <h3>Elasticsearch 选项</h3>
+          <div class="field">
+            <label for="esUrl">ES 地址</label>
+            <input type="text" id="esUrl" placeholder="http://localhost:9200" class="input" />
+          </div>
+          <div class="field">
+            <label for="indexName">索引名称</label>
+            <input type="text" id="indexName" placeholder="github_markdown" class="input" />
+          </div>
+        </section>
       </div>
 
-      <!-- conditional fields -->
-      <div class="form-group" id="starsGroup" style="display:none;">
-        <label for="minStars">最低 Star 数</label>
-        <input type="number" id="minStars" value="100" min="0" />
+      <div class="drawer-footer">
+        <button id="saveConfigBtn" class="btn btn-primary btn-block">保存设置</button>
+        <span id="configStatus" class="status-msg"></span>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────────────── -->
+    <main class="main-content">
+
+      <!-- Search Bar -->
+      <div class="search-panel glass-card">
+        <div class="search-top-row">
+          <div class="strategy-selector">
+            <select id="strategy" class="input">
+              <option value="repo_name">🔤 按仓库名称</option>
+              <option value="stars">⭐ 按 Star 数</option>
+              <option value="language">💻 按编程语言</option>
+              <option value="topic">🏷️ 按 Topic</option>
+            </select>
+          </div>
+          <div class="search-input-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="query" class="input search-input" placeholder="输入搜索关键词…" />
+          </div>
+          <button id="searchBtn" class="btn btn-accent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            搜索
+          </button>
+        </div>
+
+        <!-- Conditional fields -->
+        <div class="search-extra-row" id="starsGroup" style="display:none;">
+          <label>最低 Star 数</label>
+          <input type="number" id="minStars" value="100" min="0" class="input input-sm" />
+        </div>
+        <div class="search-extra-row" id="languageGroup" style="display:none;">
+          <label>编程语言</label>
+          <input type="text" id="language" value="Python" class="input input-sm" />
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="search-pagination-row">
+          <div class="pagination-field">
+            <label>每页条数</label>
+            <select id="perPage" class="input input-sm">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="pagination-field">
+            <label>页码</label>
+            <input type="number" id="pageNum" value="1" min="1" class="input input-sm" />
+          </div>
+        </div>
       </div>
 
-      <div class="form-group" id="languageGroup" style="display:none;">
-        <label for="language">编程语言</label>
-        <input type="text" id="language" value="Python" />
+      <!-- Results -->
+      <div id="results" class="results-panel glass-card" style="display:none;">
+        <div class="results-header">
+          <h2>搜索结果</h2>
+          <span id="totalCount" class="badge"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>仓库</th>
+                <th>描述</th>
+                <th class="col-stars">⭐ Stars</th>
+                <th class="col-lang">语言</th>
+                <th class="col-action">操作</th>
+              </tr>
+            </thead>
+            <tbody id="repoTableBody"></tbody>
+          </table>
+        </div>
+        <!-- Bottom pagination -->
+        <div class="results-footer">
+          <button class="btn btn-outline btn-sm" id="prevPageBtn" disabled>← 上一页</button>
+          <span id="pageInfo" class="page-info"></span>
+          <button class="btn btn-outline btn-sm" id="nextPageBtn">下一页 →</button>
+        </div>
       </div>
 
-      <button id="searchBtn" class="btn btn-primary">🔍 搜索</button>
-    </div>
+      <!-- Fetch Status -->
+      <div id="fetchStatus" class="fetch-panel glass-card" style="display:none;">
+        <div class="fetch-header">
+          <h2>📥 下载结果</h2>
+          <button class="btn-icon btn-sm" id="closeFetch" title="关闭">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <pre id="fetchOutput"></pre>
+      </div>
 
-    <!-- ── Results ────────────────────────────────────────────── -->
-    <div id="results" class="card" style="display:none;">
-      <h2>📋 搜索结果 <span id="totalCount" class="badge"></span></h2>
-      <table>
-        <thead>
-          <tr>
-            <th>仓库</th>
-            <th>描述</th>
-            <th>⭐</th>
-            <th>语言</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="repoTableBody"></tbody>
-      </table>
-    </div>
-
-    <!-- ── Fetch Status ───────────────────────────────────────── -->
-    <div id="fetchStatus" class="card" style="display:none;">
-      <h2>📥 下载结果</h2>
-      <pre id="fetchOutput"></pre>
-    </div>
+    </main>
   </div>
 
   <script src="app.js"></script>

@@ -1,10 +1,12 @@
 """Core crawling logic — fetch markdown files from a GitHub repository."""
 
-import os
-import re
+from __future__ import annotations
+
 from typing import Any
 
 import httpx
+
+from storage import StorageBackend
 
 GITHUB_API = "https://api.github.com"
 
@@ -46,40 +48,32 @@ async def list_markdown_files(
     return md_files
 
 
-def _sanitize_path_component(name: str) -> str:
-    """Sanitize a single path component, preventing path traversal."""
-    # Remove any path separators and traversal sequences
-    name = name.replace("/", "_").replace("\\", "_")
-    name = re.sub(r'[<>:"|?*]', "_", name)
-    # Strip leading dots to prevent hidden files / traversal
-    name = name.lstrip(".")
-    return name or "unnamed"
-
-
 async def download_markdown_files(
     owner: str,
     repo: str,
-    storage_dir: str,
+    backend: StorageBackend,
     *,
     token: str = "",
 ) -> list[str]:
-    """Download every markdown file from *owner/repo* into *storage_dir*.
+    """Download every markdown file from *owner/repo* via *backend*.
 
-    Returns the list of local file paths that were written.
+    Parameters
+    ----------
+    owner:
+        Repository owner.
+    repo:
+        Repository name.
+    backend:
+        A :class:`StorageBackend` instance to persist each file.
+    token:
+        Optional GitHub personal access token.
+
+    Returns
+    -------
+    list[str]
+        Identifiers of the saved resources (paths, DB ids, etc.).
     """
     md_files = await list_markdown_files(owner, repo, token=token)
-
-    safe_owner = _sanitize_path_component(owner)
-    safe_repo = _sanitize_path_component(repo)
-    repo_dir = os.path.join(storage_dir, f"{safe_owner}__{safe_repo}")
-    repo_dir = os.path.realpath(repo_dir)
-
-    # Ensure the resolved repo_dir is still inside storage_dir
-    real_storage = os.path.realpath(storage_dir)
-    if not repo_dir.startswith(real_storage + os.sep) and repo_dir != real_storage:
-        raise ValueError("Invalid repository name — path escapes storage directory")
-
-    os.makedirs(repo_dir, exist_ok=True)
 
     saved: list[str] = []
     async with httpx.AsyncClient(timeout=60) as client:
@@ -90,20 +84,7 @@ async def download_markdown_files(
             resp = await client.get(download_url, headers=_headers(token))
             resp.raise_for_status()
 
-            relative = md["path"]
-            safe_relative = _sanitize_path_component(relative)
-            local_path = os.path.join(repo_dir, safe_relative)
-            local_path = os.path.realpath(local_path)
-
-            # Ensure the resolved path is still under repo_dir
-            if not local_path.startswith(repo_dir + os.sep) and local_path != repo_dir:
-                continue
-
-            local_dir = os.path.dirname(local_path)
-            os.makedirs(local_dir, exist_ok=True)
-
-            with open(local_path, "w", encoding="utf-8") as f:
-                f.write(resp.text)
-            saved.append(local_path)
+            identifier = await backend.save(owner, repo, md["path"], resp.text)
+            saved.append(identifier)
 
     return saved

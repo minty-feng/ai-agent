@@ -31,3 +31,7 @@ Interactive English training app for programmers. Practice technical vocabulary 
 ### [opencode](opencode/)
 
 Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry points (`attach`, `thread`) and their worker/RPC bridge without pulling in the full application. Includes network configuration, RPC client/server via `postMessage`, and command builder utilities.
+
+### [github-crawler](github-crawler/)
+
+GitHub Markdown Crawler — search GitHub repositories with four strategies (by name, stars, language, or topic) and download all Markdown files in one click. Python (FastAPI + httpx) backend with a vanilla HTML/CSS/JS frontend for configuring storage paths and triggering downloads.

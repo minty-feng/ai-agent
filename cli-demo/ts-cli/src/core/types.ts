@@ -1,17 +1,5 @@
-// Shared type definitions for the CLI demo.
-// Mirrors the separation in opencode/tui-cli/src/core/types.ts
+// Shared type definitions — kept minimal since Commander.js infers option
+// types from the .option() / .argument() chain itself (same approach as
+// claude-code, which uses @commander-js/extra-typings for full inference).
 
-export type ChatArgs = {
-  model?: string
-  system?: string
-  temperature?: number
-  stream?: boolean
-}
-
-export type RunArgs = {
-  prompt: string
-  model?: string
-  output?: "text" | "json"
-}
-
-export type VersionArgs = Record<string, never>
+export type OutputFormat = "text" | "json"

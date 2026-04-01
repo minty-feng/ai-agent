@@ -1,22 +1,19 @@
-// Core command builder — mirrors the opencode/tui-cli pattern
-// (src/core/cmd.ts in opencode extracts yargs boilerplate so each command
-// file only declares its name, describe, builder, and handler.)
+// Core command factory — mirrors claude-code's pattern.
+//
+// claude-code uses @commander-js/extra-typings which gives full TypeScript
+// inference for .option() chains. Each command file calls registerCommand()
+// to attach itself to the root Command, keeping index.ts thin.
+//
+// Reference: claude-code src/main.tsx, src/commands.ts
 
-export type CommandBuilder = {
-  positional: (name: string, options: Record<string, unknown>) => CommandBuilder
-  option: (name: string, options: Record<string, unknown>) => CommandBuilder
-  options: (options: Record<string, unknown>) => CommandBuilder
-}
+import { Command } from "@commander-js/extra-typings"
 
-type WithDoubleDash<T> = T & { "--"?: string[] }
+export type CommandSetup = (program: Command) => void
 
-export type CommandModule<TArgs> = {
-  command: string
-  describe: string
-  builder?: (yargs: CommandBuilder) => CommandBuilder
-  handler: (args: TArgs) => Promise<void> | void
-}
-
-export function cmd<TArgs>(input: CommandModule<WithDoubleDash<TArgs>>) {
-  return input
+/**
+ * Thin helper so each command module can export a typed setup function
+ * without importing Command directly (easier to mock in tests).
+ */
+export function defineCommand(setup: CommandSetup): CommandSetup {
+  return setup
 }

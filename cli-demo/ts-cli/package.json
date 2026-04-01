@@ -1,0 +1,24 @@
+{
+  "name": "ts-cli-demo",
+  "version": "0.1.0",
+  "description": "TypeScript command-line demo — Commander.js + interactive REPL pattern",
+  "type": "module",
+  "bin": {
+    "ts-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node --experimental-vm-modules dist/index.js",
+    "dev": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "chalk": "^5.3.0",
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

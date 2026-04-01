@@ -14,7 +14,6 @@ const totalCountSpan = document.getElementById("totalCount");
 const repoTableBody = document.getElementById("repoTableBody");
 
 const perPageSelect = document.getElementById("perPage");
-const pageNumInput = document.getElementById("pageNum");
 const prevPageBtn = document.getElementById("prevPageBtn");
 const nextPageBtn = document.getElementById("nextPageBtn");
 const pageInfo = document.getElementById("pageInfo");
@@ -46,6 +45,8 @@ const esOptions = document.getElementById("esOptions");
 
 // ── State ───────────────────────────────────────────────────────────
 let lastSearchTotal = 0;
+let currentPage = 1;
+const MAX_DISPLAYED_TOPICS = 3;
 
 // ── Settings drawer ─────────────────────────────────────────────────
 function openDrawer() {
@@ -145,14 +146,15 @@ closeFetchBtn.addEventListener("click", () => {
 });
 
 // ── Search repos ────────────────────────────────────────────────────
-async function doSearch() {
+async function doSearch(resetPage = true) {
+  if (resetPage) currentPage = 1;
   const payload = {
     strategy: strategySelect.value,
     query: queryInput.value.trim(),
     min_stars: parseInt(minStarsInput.value, 10) || 100,
     language: languageInput.value.trim() || "Python",
     per_page: parseInt(perPageSelect.value, 10) || 10,
-    page: parseInt(pageNumInput.value, 10) || 1,
+    page: currentPage,
   };
 
   if (!payload.query) {
@@ -175,7 +177,7 @@ async function doSearch() {
     const data = await resp.json();
     lastSearchTotal = data.total_count;
     renderResults(data);
-    updatePagination(payload.page, payload.per_page, data.total_count);
+    updatePagination(currentPage, payload.per_page, data.total_count);
   } catch (err) {
     alert("搜索失败: " + err.message);
   } finally {
@@ -194,32 +196,51 @@ queryInput.addEventListener("keydown", (e) => {
 });
 
 // ── Pagination ──────────────────────────────────────────────────────
-function updatePagination(currentPage, perPage, total) {
+function updatePagination(page, perPage, total) {
   const totalPages = Math.ceil(total / perPage) || 1;
-  pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页`;
-  prevPageBtn.disabled = currentPage <= 1;
-  nextPageBtn.disabled = currentPage >= totalPages;
+  pageInfo.textContent = `第 ${page} / ${totalPages} 页`;
+  prevPageBtn.disabled = page <= 1;
+  nextPageBtn.disabled = page >= totalPages;
 }
 
 prevPageBtn.addEventListener("click", () => {
-  const cur = parseInt(pageNumInput.value, 10) || 1;
-  if (cur > 1) {
-    pageNumInput.value = cur - 1;
-    doSearch();
+  if (currentPage > 1) {
+    currentPage -= 1;
+    doSearch(false);
   }
 });
 
 nextPageBtn.addEventListener("click", () => {
-  const cur = parseInt(pageNumInput.value, 10) || 1;
   const perPage = parseInt(perPageSelect.value, 10) || 10;
   const totalPages = Math.ceil(lastSearchTotal / perPage) || 1;
-  if (cur < totalPages) {
-    pageNumInput.value = cur + 1;
-    doSearch();
+  if (currentPage < totalPages) {
+    currentPage += 1;
+    doSearch(false);
   }
 });
 
+perPageSelect.addEventListener("change", () => {
+  if (lastSearchTotal > 0) doSearch(true);
+});
+
 // ── Render results ──────────────────────────────────────────────────
+function renderTopics(repo) {
+  const topics = repo.topics || [];
+  if (topics.length > 0) {
+    return topics.slice(0, MAX_DISPLAYED_TOPICS).map(t => `<span class="topic-badge">${escapeHtml(t)}</span>`).join("");
+  }
+  // fallback: first N words of description
+  const desc = (repo.description || "").trim();
+  if (!desc) return '<span class="text-muted">—</span>';
+  const words = desc.split(/\s+/).slice(0, MAX_DISPLAYED_TOPICS);
+  return words.map(w => `<span class="topic-badge topic-badge--muted">${escapeHtml(w)}</span>`).join("");
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return "—";
+  return isoStr.slice(0, 10);
+}
+
 function renderResults(data) {
   totalCountSpan.textContent = `共 ${data.total_count.toLocaleString()} 个`;
   repoTableBody.innerHTML = "";
@@ -228,7 +249,8 @@ function renderResults(data) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><a href="${escapeHtml(repo.url)}" target="_blank" rel="noopener">${escapeHtml(repo.full_name)}</a></td>
-      <td><span class="repo-desc">${escapeHtml(repo.description || "—")}</span></td>
+      <td><div class="topic-list">${renderTopics(repo)}</div></td>
+      <td class="col-created">${formatDate(repo.created_at)}</td>
       <td><span class="star-count">${repo.stars.toLocaleString()}</span></td>
       <td>${repo.language ? `<span class="lang-badge">${escapeHtml(repo.language)}</span>` : "—"}</td>
       <td>

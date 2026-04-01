@@ -26,7 +26,7 @@ A modern, responsive dashboard demo inspired by HackerRank. Showcases dashboard 
 
 ### [dev-english](dev-english/)
 
-Interactive English training app for programmers. Practice technical vocabulary (algorithms, OS, AI, networking, databases), read real technical passages with comprehension questions, write professional git commit messages, and compose code review comments — all in English. Built with Next.js 14, TypeScript, and Tailwind CSS.
+Interactive English training app for programmers. Practice technical vocabulary (algorithms, OS, AI, networking, databases), read real technical passages with comprehension questions, write professional git commit messages, and compose code review comments — all in English. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
 ### [opencode](opencode/)
 

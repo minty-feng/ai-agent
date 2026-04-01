@@ -5,7 +5,7 @@ import os
 import tempfile
 
 import pytest
-from config import AppConfig, load_config, save_config, ensure_storage_dir, CONFIG_FILE
+from config import AppConfig, load_config, save_config, ensure_storage_dir
 from strategies import Strategy, STRATEGY_MAP
 
 

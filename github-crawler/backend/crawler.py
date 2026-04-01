@@ -46,9 +46,14 @@ async def list_markdown_files(
     return md_files
 
 
-def _sanitize_filename(name: str) -> str:
-    """Replace characters that are unsafe in file-system paths."""
-    return re.sub(r'[<>:"/\\|?*]', "_", name)
+def _sanitize_path_component(name: str) -> str:
+    """Sanitize a single path component, preventing path traversal."""
+    # Remove any path separators and traversal sequences
+    name = name.replace("/", "_").replace("\\", "_")
+    name = re.sub(r'[<>:"|?*]', "_", name)
+    # Strip leading dots to prevent hidden files / traversal
+    name = name.lstrip(".")
+    return name or "unnamed"
 
 
 async def download_markdown_files(
@@ -64,7 +69,16 @@ async def download_markdown_files(
     """
     md_files = await list_markdown_files(owner, repo, token=token)
 
-    repo_dir = os.path.join(storage_dir, _sanitize_filename(f"{owner}__{repo}"))
+    safe_owner = _sanitize_path_component(owner)
+    safe_repo = _sanitize_path_component(repo)
+    repo_dir = os.path.join(storage_dir, f"{safe_owner}__{safe_repo}")
+    repo_dir = os.path.realpath(repo_dir)
+
+    # Ensure the resolved repo_dir is still inside storage_dir
+    real_storage = os.path.realpath(storage_dir)
+    if not repo_dir.startswith(real_storage + os.sep) and repo_dir != real_storage:
+        raise ValueError("Invalid repository name — path escapes storage directory")
+
     os.makedirs(repo_dir, exist_ok=True)
 
     saved: list[str] = []
@@ -77,7 +91,14 @@ async def download_markdown_files(
             resp.raise_for_status()
 
             relative = md["path"]
-            local_path = os.path.join(repo_dir, _sanitize_filename(relative))
+            safe_relative = _sanitize_path_component(relative)
+            local_path = os.path.join(repo_dir, safe_relative)
+            local_path = os.path.realpath(local_path)
+
+            # Ensure the resolved path is still under repo_dir
+            if not local_path.startswith(repo_dir + os.sep) and local_path != repo_dir:
+                continue
+
             local_dir = os.path.dirname(local_path)
             os.makedirs(local_dir, exist_ok=True)
 

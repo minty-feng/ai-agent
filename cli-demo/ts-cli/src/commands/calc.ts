@@ -18,6 +18,9 @@ import { log } from "../core/logger.js"
  * Rejects anything else (letters, semicolons, backticks …)
  */
 function evalMath(expr: string): number {
+  // Each character must be in the safe set.  Note: `*` in the character class
+  // covers both `*` (multiply) and `**` (exponentiation), since ** is just two
+  // consecutive `*` characters and the regex validates character by character.
   if (!/^[\d\s+\-*/().%]+$/.test(expr)) {
     throw new Error(`Unsafe expression — only numbers and operators (+ - * / % ** ( )) are allowed`)
   }

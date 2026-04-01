@@ -12,9 +12,10 @@
 
 import React from "react"
 import { Box, Text } from "ink"
+import { RainbowText } from "./RainbowText.js"
 
 export type Message = {
-  role: "user" | "assistant" | "system"
+  role: "user" | "assistant" | "system" | "rainbow"
   text: string
 }
 
@@ -40,6 +41,12 @@ export function MessageList({ messages }: Props) {
             <>
               <Text color="magenta" bold>ai› </Text>
               <Text color="white">{msg.text}</Text>
+            </>
+          ) : msg.role === "rainbow" ? (
+            /* /rainbow <text> — each character gets its own hue */
+            <>
+              <Text color="cyan" bold>🌈 </Text>
+              <RainbowText text={msg.text} />
             </>
           ) : (
             /* system messages: command output, errors, info */

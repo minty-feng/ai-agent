@@ -19,6 +19,8 @@
  *   /clear             — clear message history
  *   /model <name>      — switch displayed model name
  *   /tokens            — show total token count
+ *   /dice [N]          — roll an N-sided die (default d6)
+ *   /rainbow <text>    — display text in rainbow colors
  */
 
 import React, { useState, useCallback } from "react"
@@ -26,6 +28,7 @@ import { Box, Text, useInput, useApp } from "ink"
 import { MessageList, type Message } from "./components/MessageList.js"
 import { Spinner } from "./components/Spinner.js"
 import { StatusBar } from "./components/StatusBar.js"
+import { Header } from "./components/Header.js"
 
 // Approximate token estimate: ~2 tokens per word (matches GPT-3/4 tokenization heuristic)
 const TOKEN_MULTIPLIER = 2
@@ -33,14 +36,19 @@ const TOKEN_MULTIPLIER = 2
 const MODELS = ["claude-3-5-sonnet", "gpt-4o", "gemini-1.5-pro"] as const
 const DEFAULT_MODEL = "claude-3-5-sonnet (stub)"
 
+// Unicode dice face symbols ⚀–⚅
+const UNICODE_D6 = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"] as const
+
 // Help lines shown when the user types /help
 const HELP_LINES = [
-  "/help              — show this list",
-  "/clear             — clear message history",
-  "/model             — show available models",
-  "/model <name>      — switch model  (claude-3-5-sonnet | gpt-4o | gemini-1.5-pro)",
-  "/tokens            — show total token estimate",
-  "/exit  or Ctrl-C   — quit",
+  "/help                   — show this list",
+  "/clear                  — clear message history",
+  "/model                  — show available models",
+  "/model <name>           — switch model  (claude-3-5-sonnet | gpt-4o | gemini-1.5-pro)",
+  "/tokens                 — show total token estimate",
+  "/dice [N]               — roll an N-sided die  (default: d6)",
+  "/rainbow <text>         — display text in rainbow colors",
+  "/exit  or Ctrl-C        — quit",
 ]
 
 // Simulate async AI response — replace with real Anthropic SDK call.
@@ -61,6 +69,7 @@ type SlashResult =
   | { kind: "message"; text: string }
   | { kind: "clear" }
   | { kind: "model"; name: string }
+  | { kind: "rainbow"; text: string }
   | { kind: "unknown"; cmd: string }
 
 function handleSlash(input: string, currentModel: string): SlashResult {
@@ -90,6 +99,25 @@ function handleSlash(input: string, currentModel: string): SlashResult {
         }
       }
       return { kind: "model", name: matched }
+    }
+    case "/dice": {
+      const sides = parts[1] ? parseInt(parts[1], 10) : 6
+      if (isNaN(sides) || sides < 2) {
+        return { kind: "message", text: 'Usage: /dice [sides]  e.g. /dice 20' }
+      }
+      const roll = Math.floor(Math.random() * sides) + 1
+      const face = sides === 6 ? ` ${UNICODE_D6[roll - 1]}` : ""
+      const ratio = roll / sides
+      const tag = ratio >= 0.9 ? " ★ Critical!" : ratio <= 0.1 ? " ☠ Fumble!" : ""
+      return {
+        kind: "message",
+        text: `🎲 d${sides} → ${roll}${face}${tag}  (1–${sides})`,
+      }
+    }
+    case "/rainbow": {
+      const text = parts.slice(1).join(" ")
+      if (!text) return { kind: "message", text: "Usage: /rainbow <text>" }
+      return { kind: "rainbow", text }
     }
     default:
       return { kind: "unknown", cmd }
@@ -128,6 +156,9 @@ export function App() {
           return
         case "message":
           setMessages((prev) => [...prev, { role: "system", text: result.text }])
+          return
+        case "rainbow":
+          setMessages((prev) => [...prev, { role: "rainbow", text: result.text }])
           return
         case "unknown":
           setMessages((prev) => [
@@ -168,11 +199,8 @@ export function App() {
 
   return (
     <Box flexDirection="column" gap={1} padding={1}>
-      {/* ── Header ─────────────────────────────────────── */}
-      <Box>
-        <Text bold color="green">✦ ink-ui-demo</Text>
-        <Text dimColor>  ·  React + Ink TUI  ·  /help for commands  ·  Ctrl-C to quit</Text>
-      </Box>
+      {/* ── Animated cycling-color header ──────────────── */}
+      <Header />
 
       {/* ── Message history ───────────────────────────── */}
       <MessageList messages={messages} />

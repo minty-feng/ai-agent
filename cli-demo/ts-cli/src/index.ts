@@ -26,6 +26,8 @@ import { runCommand } from "./commands/run.js"
 import { versionCommand } from "./commands/version.js"
 import { calcCommand } from "./commands/calc.js"
 import { sysCommand } from "./commands/sys.js"
+import { diceCommand } from "./commands/dice.js"
+import { paletteCommand } from "./commands/palette.js"
 
 // ── 2. Root program ───────────────────────────────────────────────────────
 const program = new Command()
@@ -40,6 +42,8 @@ runCommand(program)
 versionCommand(program)
 calcCommand(program)
 sysCommand(program)
+diceCommand(program)
+paletteCommand(program)
 
 // ── 4. Parse & dispatch ───────────────────────────────────────────────────
 // Await prefetch before running so the first subcommand handler has config.

@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import Header from "@/components/Header";
+import "../styles/globals.css";
+
+export const metadata: Metadata = {
+  title: "DevEnglish \u2014 English for Programmers",
+  description:
+    "Improve your technical English through vocabulary, reading, commit messages, and code review practice.",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className="bg-gray-50 font-sans text-slate-900 antialiased">
+        <div className="min-h-screen bg-gray-50">
+          <Header />
+          {children}
+        </div>
+      </body>
+    </html>
+  );
+}

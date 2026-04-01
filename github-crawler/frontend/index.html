@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Markdown 爬虫</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🐙 GitHub Markdown 爬虫</h1>
+    <p class="subtitle">搜索 GitHub 仓库，一键获取所有 Markdown 文档</p>
+
+    <!-- ── Settings Panel ─────────────────────────────────────── -->
+    <details class="card" id="settingsPanel">
+      <summary>⚙️ 配置</summary>
+      <div class="form-group">
+        <label for="storageDir">存储路径</label>
+        <input type="text" id="storageDir" placeholder="/path/to/downloads" />
+      </div>
+      <div class="form-group">
+        <label for="githubToken">GitHub Token（可选，提高请求限额）</label>
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" />
+      </div>
+      <button id="saveConfigBtn" class="btn btn-secondary">💾 保存配置</button>
+      <span id="configStatus" class="status-msg"></span>
+    </details>
+
+    <!-- ── Search Panel ───────────────────────────────────────── -->
+    <div class="card">
+      <h2>🔍 搜索仓库</h2>
+
+      <div class="form-group">
+        <label for="strategy">搜索策略</label>
+        <select id="strategy">
+          <option value="repo_name">按仓库名称</option>
+          <option value="stars">按 Star 数</option>
+          <option value="language">按编程语言</option>
+          <option value="topic">按 Topic</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="query">关键词 / 仓库名</label>
+        <input type="text" id="query" placeholder="例如：awesome-python" />
+      </div>
+
+      <!-- conditional fields -->
+      <div class="form-group" id="starsGroup" style="display:none;">
+        <label for="minStars">最低 Star 数</label>
+        <input type="number" id="minStars" value="100" min="0" />
+      </div>
+
+      <div class="form-group" id="languageGroup" style="display:none;">
+        <label for="language">编程语言</label>
+        <input type="text" id="language" value="Python" />
+      </div>
+
+      <button id="searchBtn" class="btn btn-primary">🔍 搜索</button>
+    </div>
+
+    <!-- ── Results ────────────────────────────────────────────── -->
+    <div id="results" class="card" style="display:none;">
+      <h2>📋 搜索结果 <span id="totalCount" class="badge"></span></h2>
+      <table>
+        <thead>
+          <tr>
+            <th>仓库</th>
+            <th>描述</th>
+            <th>⭐</th>
+            <th>语言</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="repoTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ── Fetch Status ───────────────────────────────────────── -->
+    <div id="fetchStatus" class="card" style="display:none;">
+      <h2>📥 下载结果</h2>
+      <pre id="fetchOutput"></pre>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

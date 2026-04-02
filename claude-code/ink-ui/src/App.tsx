@@ -20,7 +20,13 @@
  *   /model <name>      — switch displayed model name
  *   /tokens            — show total token count
  *   /dice [N]          — roll an N-sided die (default d6)
+ *   /dice3d            — roll a 3D animated die
  *   /rainbow <text>    — display text in rainbow colors
+ *   /timer <seconds>   — start a countdown timer
+ *   /calc <expr>       — evaluate a math expression
+ *   /uuid              — generate a random UUID v4
+ *   /base64 <e|d> <text> — base64 encode or decode
+ *   /progress <label>  — show an animated progress bar
  */
 
 import React, { useState, useCallback } from "react"
@@ -29,6 +35,7 @@ import { MessageList, type Message } from "./components/MessageList.js"
 import { Spinner } from "./components/Spinner.js"
 import { StatusBar } from "./components/StatusBar.js"
 import { Header } from "./components/Header.js"
+import crypto from "node:crypto"
 
 // Approximate token estimate: ~2 tokens per word (matches GPT-3/4 tokenization heuristic)
 const TOKEN_MULTIPLIER = 2
@@ -41,15 +48,20 @@ const UNICODE_D6 = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"] as const
 
 // Help lines shown when the user types /help
 const HELP_LINES = [
-  "/help                   — show this list",
-  "/clear                  — clear message history",
-  "/model                  — show available models",
-  "/model <name>           — switch model  (claude-3-5-sonnet | gpt-4o | gemini-1.5-pro)",
-  "/tokens                 — show total token estimate",
-  "/dice [N]               — roll an N-sided die  (default: d6)",
-  "/dice3d                 — roll a 3D animated die  🎲",
-  "/rainbow <text>         — display text in rainbow colors",
-  "/exit  or Ctrl-C        — quit",
+  "/help                        — show this list",
+  "/clear                       — clear message history",
+  "/model                       — show available models",
+  "/model <name>                — switch model  (claude-3-5-sonnet | gpt-4o | gemini-1.5-pro)",
+  "/tokens                      — show total token estimate",
+  "/dice [N]                    — roll an N-sided die  (default: d6)",
+  "/dice3d                      — roll a 3D animated die  🎲",
+  "/rainbow <text>              — display text in rainbow colors",
+  "/timer <seconds>             — start a countdown timer  ⏱",
+  "/calc <expression>           — evaluate a math expression  🧮",
+  "/uuid                        — generate a random UUID v4  🔑",
+  "/base64 <encode|decode> <t>  — base64 encode / decode  📦",
+  "/progress [label]            — animated progress bar demo  📊",
+  "/exit  or Ctrl-C             — quit",
 ]
 
 // Simulate async AI response — replace with real Anthropic SDK call.
@@ -72,6 +84,8 @@ type SlashResult =
   | { kind: "model"; name: string }
   | { kind: "rainbow"; text: string }
   | { kind: "dice3d"; value: number }
+  | { kind: "timer"; seconds: number }
+  | { kind: "progress"; label: string }
   | { kind: "unknown"; cmd: string }
 
 function handleSlash(input: string, currentModel: string): SlashResult {

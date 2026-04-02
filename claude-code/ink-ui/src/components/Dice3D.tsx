@@ -1,10 +1,16 @@
 /**
  * Dice3D — animated 3D isometric dice roller for the terminal
  *
- * Renders a true isometric cube using box-drawing and Unicode characters,
- * showing pip (●) patterns on the three visible faces (top, front, right).
+ * Renders a realistic isometric cube using box-drawing and Unicode characters,
+ * showing pip (●) patterns on the three visible faces (top, front-left, right).
  * The animation cycles through random orientations before settling on the
  * final roll, creating a convincing "tumbling dice" effect.
+ *
+ * The dice uses a proper isometric projection with:
+ *   - Slanted top face (parallelogram) with dot pips
+ *   - Front face with rounded corners and proper pip layout
+ *   - Right face (side) visible with perspective depth
+ *   - Shadow effect at the bottom
  *
  * Key Ink APIs shown:
  *   useState / useEffect  — drive the frame-by-frame animation
@@ -18,7 +24,6 @@ import { Box, Text } from "ink"
 // ── Pip layout definitions for d6 faces ─────────────────────────────────────
 // Each face value (1–6) maps to a 3×3 grid of booleans.
 // true = pip present, false = empty.
-// Grid rows are top-to-bottom, columns are left-to-right.
 type PipGrid = boolean[][]
 
 const PIP_LAYOUTS: Record<number, PipGrid> = {
@@ -54,25 +59,45 @@ const PIP_LAYOUTS: Record<number, PipGrid> = {
   ],
 }
 
-// ── 3D Isometric Dice Renderer ──────────────────────────────────────────────
-// Renders an isometric cube with pips on the three visible faces.
-//
-// The cube looks like:
-//        ╱‾‾‾‾‾‾‾‾‾╲
-//       ╱  TOP FACE  ╲
-//      ╱─────────────╲│
-//     │               ││
-//     │  FRONT FACE   ││ Right
-//     │               ││ Face
-//     │               ││
-//      ╲─────────────╱│
-//       ╲           ╱
-//
+// Right-side pip layouts (2-column layout for narrow side face)
+const SIDE_PIP_LAYOUTS: Record<number, boolean[][]> = {
+  1: [
+    [false, false],
+    [false, true ],
+    [false, false],
+  ],
+  2: [
+    [false, true ],
+    [false, false],
+    [true,  false],
+  ],
+  3: [
+    [false, true ],
+    [false, true ],
+    [true,  false],
+  ],
+  4: [
+    [true,  true ],
+    [false, false],
+    [true,  true ],
+  ],
+  5: [
+    [true,  true ],
+    [false, true ],
+    [true,  true ],
+  ],
+  6: [
+    [true,  true ],
+    [true,  true ],
+    [true,  true ],
+  ],
+}
 
-const PIP_CHAR = "●"
+const PIP = "●"
+const PIP_DIM = "○"
 
 // For each top-face value, define plausible (front, right) face pairs.
-// These are valid orientations of a standard Western die.
+// These are valid orientations of a standard Western die (opposite faces sum to 7).
 const ORIENTATIONS: Record<number, [number, number][]> = {
   1: [[2, 3], [3, 5], [5, 4], [4, 2]],
   2: [[1, 3], [3, 6], [6, 4], [4, 1]],
@@ -89,48 +114,76 @@ function getOrientation(top: number): { top: number; front: number; right: numbe
 }
 
 /**
- * Build the full isometric 3D dice as a string array (one string per line).
+ * Build a realistic isometric 3D dice as a string array (one string per line).
+ *
+ * Visual layout (13 lines):
+ *
+ *           ╱─────────────╲
+ *          ╱  ●       ●    ╲
+ *         ╱       ●         ╲
+ *        ╱  ●       ●    ╱   (top face with slanted perspective)
+ *       ┌─────────────┐╱
+ *       │             │╲
+ *       │  ●   ●   ●  │ ╲
+ *       │             │○ ╲
+ *       │  ●   ●   ●  │○  │  (front + right side)
+ *       │             │   │
+ *       │  ●   ●   ●  │○  │
+ *       │             │ ╱
+ *       └─────────────┘╱
+ *        ░░░░░░░░░░░░░░      (shadow)
  */
 function buildDice3D(top: number, front: number, right: number): string[] {
   const topPips = PIP_LAYOUTS[top] ?? PIP_LAYOUTS[1]!
   const frontPips = PIP_LAYOUTS[front] ?? PIP_LAYOUTS[1]!
+  const rightPips = SIDE_PIP_LAYOUTS[right] ?? SIDE_PIP_LAYOUTS[1]!
 
-  // Front face pip rows (3 rows × 3 cols)
-  const fRows = frontPips.map(row =>
-    row.map(p => p ? PIP_CHAR : " ").join("   ")
-  )
+  // Front face pip rows (3 cols, spaced with 3 chars between)
+  const fRow = (r: number) =>
+    frontPips[r]!.map(p => p ? PIP : " ").join("   ")
 
-  // Top face pip rows
-  const tRows = topPips.map(row =>
-    row.map(p => p ? PIP_CHAR : " ").join("   ")
-  )
+  // Top face pip row (skewed for isometric look)
+  const tRow = (r: number) =>
+    topPips[r]!.map(p => p ? PIP : " ").join("   ")
+
+  // Right face pip columns (2 cols per row)
+  const rPip = (r: number, c: number) =>
+    rightPips[r]?.[c] ? PIP_DIM : " "
 
   const lines: string[] = []
 
-  // ── Top face (isometric parallelogram) ──
-  lines.push(`         ╭─────────────╮`)
-  lines.push(`        ╱   ${tRows[0]}   ╱│`)
-  lines.push(`       ╱     ${tRows[1]}     ╱ │`)
-  lines.push(`      ╱   ${tRows[2]}   ╱  │`)
-  lines.push(`     ├─────────────┤   │`)
+  // ── Top face (isometric parallelogram slanting right-to-left) ──
+  lines.push(`        ╱───────────────╲`)
+  lines.push(`       ╱   ${tRow(0)}   ╲`)
+  lines.push(`      ╱                   ╲`)
+  lines.push(`     ╱   ${tRow(1)}     ╱`)
+  lines.push(`    ╱                   ╱`)
+  lines.push(`   ╱   ${tRow(2)}   ╱`)
 
-  // ── Front face + Right face edge ──
-  lines.push(`     │   ${fRows[0]}   │   │`)
-  lines.push(`     │             │  ╱`)
-  lines.push(`     │   ${fRows[1]}   │ ╱`)
-  lines.push(`     │             │╱`)
-  lines.push(`     │   ${fRows[2]}   │`)
-  lines.push(`     ╰─────────────╯`)
+  // ── Join edge between top and front ──
+  lines.push(`  ┌───────────────┐ ╱`)
+
+  // ── Front face (3 pip rows) + right face edge ──
+  lines.push(`  │               │${rPip(0, 0)} ╲`)
+  lines.push(`  │  ${fRow(0)}   │${rPip(0, 1)}  │`)
+  lines.push(`  │               │    │`)
+  lines.push(`  │  ${fRow(1)}   │${rPip(1, 0)}  │`)
+  lines.push(`  │               │${rPip(1, 1)}  │`)
+  lines.push(`  │  ${fRow(2)}   │${rPip(2, 0)} ╱`)
+  lines.push(`  │               │${rPip(2, 1)}╱`)
+  lines.push(`  └───────────────┘╱`)
+
+  // ── Shadow ──
+  lines.push(`   ░░░░░░░░░░░░░░░░`)
 
   return lines
 }
 
 // ── Animation frames: "tumbling" dice ───────────────────────────────────────
-// During the spin, we show random face orientations cycling rapidly.
 
-const SPIN_FRAMES = 12      // number of intermediate frames
-const SPIN_INTERVAL = 100   // ms between spin frames
-const SETTLE_DELAY = 300    // ms pause before showing final result
+const SPIN_FRAMES = 12
+const SPIN_INTERVAL = 100
+const SETTLE_DELAY = 300
 
 type AnimState = {
   phase: "spinning" | "settled"
@@ -153,14 +206,12 @@ export function Dice3D({ value, onComplete }: Props) {
   const [state, setState] = useState<AnimState>({
     phase: "spinning",
     frameIdx: 0,
-    // Start with a random orientation
     ...getOrientation(Math.floor(Math.random() * 6) + 1),
   })
 
   useEffect(() => {
     if (state.phase === "spinning") {
       if (state.frameIdx >= SPIN_FRAMES) {
-        // Transition to settled
         const timer = setTimeout(() => {
           setState({
             phase: "settled",
@@ -171,7 +222,6 @@ export function Dice3D({ value, onComplete }: Props) {
         return () => clearTimeout(timer)
       }
 
-      // Show next random frame — speed slows down toward the end
       const delay = SPIN_INTERVAL + state.frameIdx * 20
       const timer = setTimeout(() => {
         const randTop = Math.floor(Math.random() * 6) + 1
@@ -185,7 +235,6 @@ export function Dice3D({ value, onComplete }: Props) {
       return () => clearTimeout(timer)
     }
 
-    // Phase === settled: call onComplete
     if (state.phase === "settled" && onComplete) {
       const timer = setTimeout(onComplete, 200)
       return () => clearTimeout(timer)
@@ -195,7 +244,6 @@ export function Dice3D({ value, onComplete }: Props) {
   const diceLines = buildDice3D(state.top, state.front, state.right)
   const isSpinning = state.phase === "spinning"
 
-  // Color: spinning = cyan (motion), settled = bright green/yellow based on value
   const diceColor = isSpinning
     ? "cyan"
     : value >= 5

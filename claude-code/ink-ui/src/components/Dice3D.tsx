@@ -200,7 +200,7 @@ type Props = {
   onComplete?: () => void
 }
 
-export function Dice3D({ value, onComplete }: Props) {
+export const Dice3D = React.memo(function Dice3D({ value, onComplete }: Props) {
   const finalOrientation = useMemo(() => getOrientation(value), [value])
   // Stabilize callback ref to avoid re-triggering useEffect on every render
   const onCompleteRef = useRef(onComplete)
@@ -249,7 +249,10 @@ export function Dice3D({ value, onComplete }: Props) {
     }
   }, [state.phase, state.frameIdx, finalOrientation])
 
-  const diceLines = buildDice3D(state.top, state.front, state.right)
+  const diceLines = useMemo(
+    () => buildDice3D(state.top, state.front, state.right),
+    [state.top, state.front, state.right],
+  )
   const isSpinning = state.phase === "spinning"
 
   const diceColor = isSpinning
@@ -263,8 +266,10 @@ export function Dice3D({ value, onComplete }: Props) {
   const ratio = value / 6
   const label = ratio >= 0.8 ? " ★ Critical!" : ratio <= 1 / 6 ? " ☠ Fumble!" : ""
 
+  // Fixed height prevents layout shifts during animation and after settling.
+  // 16 dice art lines + 1 marginTop + 1 status line = 18 rows.
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" height={18}>
       <Box flexDirection="column">
         {diceLines.map((line, i) => (
           <Text key={i} color={diceColor} bold={!isSpinning}>
@@ -288,4 +293,4 @@ export function Dice3D({ value, onComplete }: Props) {
       )}
     </Box>
   )
-}
+})

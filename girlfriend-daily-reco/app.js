@@ -5,6 +5,7 @@ const DEFAULT_OUTFITS = [
     weather: ["cloudy", "cold", "sunny"],
     moods: ["happy", "romantic", "calm"],
     occasions: ["date", "casual"],
+    budget: "mid",
     link: "https://www.taobao.com/",
   },
   {
@@ -13,6 +14,7 @@ const DEFAULT_OUTFITS = [
     weather: ["sunny", "cloudy", "cold"],
     moods: ["focused", "calm"],
     occasions: ["work", "casual"],
+    budget: "budget",
     link: "https://www.tmall.com/",
   },
   {
@@ -21,6 +23,7 @@ const DEFAULT_OUTFITS = [
     weather: ["hot", "sunny"],
     moods: ["happy", "calm"],
     occasions: ["work", "casual", "home"],
+    budget: "budget",
     link: "https://www.jd.com/",
   },
   {
@@ -29,6 +32,7 @@ const DEFAULT_OUTFITS = [
     weather: ["rainy", "cloudy", "cold"],
     moods: ["focused", "romantic"],
     occasions: ["work", "date"],
+    budget: "mid",
     link: "https://www.taobao.com/",
   },
   {
@@ -37,6 +41,7 @@ const DEFAULT_OUTFITS = [
     weather: ["rainy", "cold", "hot"],
     moods: ["tired", "calm"],
     occasions: ["home"],
+    budget: "budget",
     link: "https://www.xiaohongshu.com/",
   },
 ];
@@ -48,6 +53,7 @@ const DEFAULT_MEALS = [
     weather: ["rainy", "cold", "cloudy"],
     moods: ["tired", "happy"],
     diets: ["comfort", "protein"],
+    budget: "mid",
     link: "https://www.dianping.com/",
   },
   {
@@ -56,6 +62,7 @@ const DEFAULT_MEALS = [
     weather: ["sunny", "hot", "cloudy"],
     moods: ["focused", "calm"],
     diets: ["light", "protein"],
+    budget: "mid",
     link: "https://www.meituan.com/",
   },
   {
@@ -64,6 +71,7 @@ const DEFAULT_MEALS = [
     weather: ["rainy", "cold"],
     moods: ["happy", "tired"],
     diets: ["spicy", "comfort"],
+    budget: "budget",
     link: "https://www.meituan.com/",
   },
   {
@@ -72,6 +80,7 @@ const DEFAULT_MEALS = [
     weather: ["hot", "sunny"],
     moods: ["calm", "focused"],
     diets: ["light", "protein"],
+    budget: "mid",
     link: "https://www.ele.me/",
   },
   {
@@ -80,6 +89,7 @@ const DEFAULT_MEALS = [
     weather: ["cold", "rainy", "cloudy"],
     moods: ["tired", "romantic", "calm"],
     diets: ["comfort"],
+    budget: "budget",
     link: "https://www.dianping.com/",
   },
 ];
@@ -121,6 +131,21 @@ const HOT_MEAL_SUGGESTIONS = [
 ];
 
 const $ = (id) => document.getElementById(id);
+const BUDGET_LABELS = { all: "不限", budget: "平价", mid: "中档" };
+const WEATHER_LABELS = {
+  sunny: "晴天",
+  cloudy: "多云",
+  rainy: "雨天",
+  cold: "降温/冷天",
+  hot: "炎热",
+};
+const TOMORROW_MOOD_FALLBACK = {
+  happy: "calm",
+  calm: "happy",
+  tired: "focused",
+  romantic: "happy",
+  focused: "calm",
+};
 
 const store = {
   outfits: [],
@@ -151,6 +176,7 @@ function scoreOutfit(outfit, condition) {
   if (outfit.weather.includes(condition.weather)) score += 3;
   if (outfit.moods.includes(condition.mood)) score += 3;
   if (outfit.occasions.includes(condition.occasion)) score += 2;
+  if (condition.budget === "all" || outfit.budget === condition.budget) score += 2;
   return score;
 }
 
@@ -159,6 +185,7 @@ function scoreMeal(meal, condition) {
   if (meal.weather.includes(condition.weather)) score += 3;
   if (meal.moods.includes(condition.mood)) score += 2;
   if (condition.diet === "all" || meal.diets.includes(condition.diet)) score += 3;
+  if (condition.budget === "all" || meal.budget === condition.budget) score += 2;
   return score;
 }
 
@@ -176,6 +203,7 @@ function renderDataLists() {
       <li>
         <strong>${x.name}</strong>
         <div>${x.style || "未填写风格"} · 天气: ${x.weather.join("/") || "-"}</div>
+        <div>预算：${BUDGET_LABELS[x.budget] || "不限"}</div>
       </li>`
     )
     .join("");
@@ -186,6 +214,7 @@ function renderDataLists() {
       <li>
         <strong>${x.name}</strong>
         <div>${x.flavor || "未填写口味"} · 标签: ${x.diets.join("/") || "-"}</div>
+        <div>预算：${BUDGET_LABELS[x.budget] || "不限"}</div>
       </li>`
     )
     .join("");
@@ -200,23 +229,63 @@ function renderDataLists() {
   ).join("");
 }
 
-function renderRecommendation() {
-  const condition = {
+function getConditionFromUI() {
+  return {
     weather: $("weather").value,
     mood: $("mood").value,
     occasion: $("occasion").value,
     diet: $("diet").value,
+    budget: $("budget").value,
   };
+}
 
-  const topOutfits = pickTop(store.outfits, scoreOutfit, condition);
-  const topMeals = pickTop(store.meals, scoreMeal, condition);
+function buildTomorrowCondition(base) {
+  const rotatedOccasion = {
+    work: "casual",
+    casual: "date",
+    date: "work",
+    home: "work",
+  };
+  return {
+    ...base,
+    mood: TOMORROW_MOOD_FALLBACK[base.mood] || "calm",
+    occasion: rotatedOccasion[base.occasion] || "casual",
+  };
+}
+
+function pickHotMealsByBudget(budget) {
+  if (budget === "budget") {
+    return [
+      "番茄鸡蛋盖饭（平价又下饭）",
+      "麻辣拌（加蔬菜版，性价比高）",
+      "牛肉汤面（暖胃且预算友好）",
+    ];
+  }
+  if (budget === "mid") {
+    return [
+      "日式鳗鱼饭（满足感强）",
+      "低温鸡胸凯撒沙拉（轻负担）",
+      "海鲜奶油意面（约会感拉满）",
+    ];
+  }
+  return HOT_MEAL_SUGGESTIONS;
+}
+
+function renderRecommendation(condition, planLabel) {
+  const current = condition || getConditionFromUI();
+
+  const topOutfits = pickTop(store.outfits, scoreOutfit, current);
+  const topMeals = pickTop(store.meals, scoreMeal, current);
+  const hotMealsPool = pickHotMealsByBudget(current.budget);
 
   $("outfitResult").innerHTML = topOutfits
     .map(
       ({ item, score }, idx) => `
       <div class="result-item">
         <h4>No.${idx + 1} ${item.name}</h4>
-        <p>${item.style || "风格未填写"} · 匹配分 ${score}</p>
+        <p>${item.style || "风格未填写"} · 匹配分 ${score} · ${
+        BUDGET_LABELS[item.budget] || "不限"
+      }</p>
         ${
           item.link
             ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer">相关购买/参考链接</a>`
@@ -226,7 +295,7 @@ function renderRecommendation() {
     )
     .join("");
 
-  const hotMeals = HOT_MEAL_SUGGESTIONS.slice(0, 2)
+  const hotMeals = hotMealsPool.slice(0, 2)
     .map((name) => `<li>${name}</li>`)
     .join("");
 
@@ -236,7 +305,9 @@ function renderRecommendation() {
         ({ item, score }, idx) => `
       <div class="result-item">
         <h4>No.${idx + 1} ${item.name}</h4>
-        <p>${item.flavor || "口味未填写"} · 匹配分 ${score}</p>
+        <p>${item.flavor || "口味未填写"} · 匹配分 ${score} · ${
+          BUDGET_LABELS[item.budget] || "不限"
+        }</p>
         ${
           item.link
             ? `<a href="${item.link}" target="_blank" rel="noopener noreferrer">店铺/参考链接</a>`
@@ -251,12 +322,66 @@ function renderRecommendation() {
     </div>
   `;
 
+  $("datePlanTitle").textContent = `${planLabel || "今日推荐"}（天气：${
+    WEATHER_LABELS[current.weather]
+  }，预算：${BUDGET_LABELS[current.budget]}）`;
   $("resultEmpty").classList.add("hidden");
   $("resultWrap").classList.remove("hidden");
 }
 
+function mapWeatherCodeToTag(code, temperature) {
+  if (temperature <= 12) return "cold";
+  if (temperature >= 30) return "hot";
+  if (code >= 51 && code <= 99) return "rainy";
+  if ([1, 2, 3, 45, 48].includes(code)) return "cloudy";
+  return "sunny";
+}
+
+async function fetchWeatherByLocation() {
+  if (!navigator.geolocation) {
+    $("weatherStatus").textContent = "天气助手：当前浏览器不支持定位。";
+    return;
+  }
+
+  $("weatherStatus").textContent = "天气助手：正在获取定位并查询天气...";
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const current = data.current || {};
+        const weatherCode = Number(current.weather_code ?? 0);
+        const temp = Number(current.temperature_2m ?? 22);
+        const mapped = mapWeatherCodeToTag(weatherCode, temp);
+        $("weather").value = mapped;
+        $("weatherStatus").textContent = `天气助手：已根据定位自动设置为「${
+          WEATHER_LABELS[mapped]
+        }」，当前约 ${temp}°C。`;
+      } catch (error) {
+        $("weatherStatus").textContent =
+          "天气助手：自动识别失败，请手动选择天气。";
+      }
+    },
+    () => {
+      $("weatherStatus").textContent =
+        "天气助手：定位被拒绝，请手动选择天气。";
+    },
+    { timeout: 10000 }
+  );
+}
+
 function bindEvents() {
-  $("recommendBtn").addEventListener("click", renderRecommendation);
+  $("recommendBtn").addEventListener("click", () =>
+    renderRecommendation(getConditionFromUI(), "今日推荐")
+  );
+  $("tomorrowBtn").addEventListener("click", () => {
+    const condition = buildTomorrowCondition(getConditionFromUI());
+    renderRecommendation(condition, "明日计划");
+  });
+  $("autoWeatherBtn").addEventListener("click", fetchWeatherByLocation);
 
   $("outfitForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -266,6 +391,7 @@ function bindEvents() {
       weather: parseTags($("outfitWeather").value),
       moods: parseTags($("outfitMood").value),
       occasions: parseTags($("outfitOccasion").value),
+      budget: $("outfitBudget").value,
       link: $("outfitLink").value.trim(),
     };
     if (!newItem.name) return;
@@ -283,6 +409,7 @@ function bindEvents() {
       weather: parseTags($("mealWeather").value),
       moods: parseTags($("mealMood").value),
       diets: parseTags($("mealDiet").value),
+      budget: $("mealBudget").value,
       link: $("mealLink").value.trim(),
     };
     if (!newItem.name) return;

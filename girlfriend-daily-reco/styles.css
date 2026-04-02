@@ -63,6 +63,13 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 label {
   font-size: 14px;
   color: #374151;
@@ -99,6 +106,10 @@ select:focus {
 
 .btn.primary {
   background: #be185d;
+}
+
+.btn.secondary {
+  background: #7c3aed;
 }
 
 .btn:hover {
@@ -150,6 +161,16 @@ select:focus {
   border: 1px dashed #d1d5db;
   border-radius: 10px;
   padding: 12px;
+}
+
+.tip {
+  border: 1px solid #e9d5ff;
+  border-radius: 10px;
+  background: #faf5ff;
+  color: #6b21a8;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 
 .hidden {

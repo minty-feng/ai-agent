@@ -15,6 +15,9 @@
     <main class="container">
       <section class="card">
         <h2>1) 今日条件</h2>
+        <div id="weatherStatus" class="tip">
+          天气助手：可点击“自动识别天气”，会根据你当前位置设置天气条件。
+        </div>
         <div class="grid two">
           <label>
             天气
@@ -55,8 +58,22 @@
               <option value="protein">高蛋白</option>
             </select>
           </label>
+          <label>
+            预算偏好
+            <select id="budget">
+              <option value="all">不限</option>
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
+          </label>
         </div>
-        <button id="recommendBtn" class="btn primary">生成今日推荐</button>
+        <div class="actions">
+          <button id="autoWeatherBtn" class="btn secondary" type="button">
+            自动识别天气
+          </button>
+          <button id="recommendBtn" class="btn primary" type="button">生成今日推荐</button>
+          <button id="tomorrowBtn" class="btn" type="button">生成明日计划</button>
+        </div>
       </section>
 
       <section class="card">
@@ -85,6 +102,13 @@
           <label>
             购买链接（可选）
             <input id="outfitLink" placeholder="https://..." />
+          </label>
+          <label>
+            预算标签
+            <select id="outfitBudget">
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
           </label>
           <button class="btn" type="submit">添加到穿搭素材库</button>
         </form>
@@ -118,6 +142,13 @@
             推荐店铺/链接（可选）
             <input id="mealLink" placeholder="https://..." />
           </label>
+          <label>
+            预算标签
+            <select id="mealBudget">
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
+          </label>
           <button class="btn" type="submit">添加到菜品素材库</button>
         </form>
         <ul id="mealList" class="item-list"></ul>
@@ -127,6 +158,9 @@
         <h2>4) 今日结果</h2>
         <div id="resultEmpty" class="empty">点击“生成今日推荐”后显示结果</div>
         <div id="resultWrap" class="hidden">
+          <article id="datePlanTitleWrap">
+            <h3 id="datePlanTitle">今日推荐</h3>
+          </article>
           <article>
             <h3>穿搭推荐</h3>
             <div id="outfitResult"></div>

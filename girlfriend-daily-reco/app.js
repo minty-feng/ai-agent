@@ -151,6 +151,9 @@ const store = {
   outfits: [],
   meals: [],
 };
+const appState = {
+  latestPlan: null,
+};
 
 function loadData() {
   const savedOutfits = localStorage.getItem("gf_outfits");
@@ -271,12 +274,248 @@ function pickHotMealsByBudget(budget) {
   return HOT_MEAL_SUGGESTIONS;
 }
 
-function renderRecommendation(condition, planLabel) {
+function getPlanData(condition, planLabel) {
   const current = condition || getConditionFromUI();
-
   const topOutfits = pickTop(store.outfits, scoreOutfit, current);
   const topMeals = pickTop(store.meals, scoreMeal, current);
   const hotMealsPool = pickHotMealsByBudget(current.budget);
+
+  return {
+    planLabel: planLabel || "今日推荐",
+    condition: current,
+    topOutfits,
+    topMeals,
+    hotMealsPool,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function buildPlanText(plan) {
+  const outfitLines = plan.topOutfits
+    .map(
+      ({ item, score }, idx) =>
+        `${idx + 1}. ${item.name}（${item.style || "风格未填写"}，匹配分 ${score}，${
+          BUDGET_LABELS[item.budget] || "不限"
+        }）${item.link ? `\n   链接：${item.link}` : ""}`
+    )
+    .join("\n");
+
+  const mealLines = plan.topMeals
+    .map(
+      ({ item, score }, idx) =>
+        `${idx + 1}. ${item.name}（${item.flavor || "口味未填写"}，匹配分 ${score}，${
+          BUDGET_LABELS[item.budget] || "不限"
+        }）${item.link ? `\n   链接：${item.link}` : ""}`
+    )
+    .join("\n");
+
+  const extras = plan.hotMealsPool.slice(0, 2).map((x) => `- ${x}`).join("\n");
+
+  return [
+    `【${plan.planLabel}】`,
+    `天气：${WEATHER_LABELS[plan.condition.weather]}`,
+    `预算：${BUDGET_LABELS[plan.condition.budget]}`,
+    "",
+    "【穿搭推荐】",
+    outfitLines || "- 暂无匹配内容",
+    "",
+    "【美食推荐】",
+    mealLines || "- 暂无匹配内容",
+    "",
+    "【热门菜品（额外）】",
+    extras,
+    "",
+    `生成时间：${new Date(plan.createdAt).toLocaleString()}`,
+  ].join("\n");
+}
+
+function buildPlanHtml(plan) {
+  const outfitLines = plan.topOutfits
+    .map(
+      ({ item, score }, idx) =>
+        `<li>${idx + 1}. ${escapeHtml(item.name)}（${escapeHtml(
+          item.style || "风格未填写"
+        )}，匹配分 ${score}，${escapeHtml(
+          BUDGET_LABELS[item.budget] || "不限"
+        )}）${
+          item.link
+            ? ` <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">链接</a>`
+            : ""
+        }</li>`
+    )
+    .join("");
+
+  const mealLines = plan.topMeals
+    .map(
+      ({ item, score }, idx) =>
+        `<li>${idx + 1}. ${escapeHtml(item.name)}（${escapeHtml(
+          item.flavor || "口味未填写"
+        )}，匹配分 ${score}，${escapeHtml(
+          BUDGET_LABELS[item.budget] || "不限"
+        )}）${
+          item.link
+            ? ` <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">链接</a>`
+            : ""
+        }</li>`
+    )
+    .join("");
+
+  const extraMeals = plan.hotMealsPool
+    .slice(0, 2)
+    .map((name) => `<li>${escapeHtml(name)}</li>`)
+    .join("");
+
+  return `
+    <h3>${escapeHtml(plan.planLabel)}</h3>
+    <p>天气：${escapeHtml(WEATHER_LABELS[plan.condition.weather])}；预算：${escapeHtml(
+    BUDGET_LABELS[plan.condition.budget]
+  )}</p>
+    <h4>穿搭推荐</h4>
+    <ol>${outfitLines || "<li>暂无匹配内容</li>"}</ol>
+    <h4>美食推荐</h4>
+    <ol>${mealLines || "<li>暂无匹配内容</li>"}</ol>
+    <h4>热门菜品（额外）</h4>
+    <ul>${extraMeals}</ul>
+    <p>生成时间：${escapeHtml(new Date(plan.createdAt).toLocaleString())}</p>
+  `;
+}
+
+function updateEmailStatus(text, type) {
+  const node = $("emailStatus");
+  node.textContent = text;
+  node.classList.remove("ok", "error", "neutral");
+  if (type === "ok") node.classList.add("ok");
+  if (type === "error") node.classList.add("error");
+  if (!type) node.classList.add("neutral");
+}
+
+async function copyPlanText() {
+  if (!appState.latestPlan) {
+    updateEmailStatus("请先生成今日推荐或明日计划，再复制。", "error");
+    return;
+  }
+
+  const content = buildPlanText(appState.latestPlan);
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(content);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = content;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    updateEmailStatus("推荐文案已复制，可直接粘贴发送。", "ok");
+  } catch (error) {
+    updateEmailStatus("复制失败，请改用“一键导出”获取文案文件。", "error");
+  }
+}
+
+function exportPlan() {
+  if (!appState.latestPlan) {
+    updateEmailStatus("请先生成今日推荐或明日计划，再导出。", "error");
+    return;
+  }
+  const content = buildPlanText(appState.latestPlan);
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `${appState.latestPlan.planLabel}-${date}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  updateEmailStatus("已导出推荐文案文件，可直接转发给她。", "ok");
+}
+
+async function sendPlanEmail() {
+  if (!appState.latestPlan) {
+    updateEmailStatus("请先生成推荐，再发送邮件。", "error");
+    return;
+  }
+  const toEmail = $("emailTo").value.trim();
+  if (!toEmail) {
+    updateEmailStatus("请先填写收件人邮箱。", "error");
+    return;
+  }
+
+  const mode = $("emailMode").value;
+  const manualSubject = $("emailSubject").value.trim();
+  const subject = manualSubject || `给你准备的${appState.latestPlan.planLabel}：穿搭+美食`;
+  const textBody = buildPlanText(appState.latestPlan);
+  const htmlBody = buildPlanHtml(appState.latestPlan);
+
+  if (mode === "mailto") {
+    const mailto = `mailto:${encodeURIComponent(toEmail)}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(textBody)}`;
+    window.location.href = mailto;
+    updateEmailStatus("已打开邮件客户端，请确认后发送。", "ok");
+    return;
+  }
+
+  const serviceId = $("emailServiceId").value.trim();
+  const templateId = $("emailTemplateId").value.trim();
+  const publicKey = $("emailPublicKey").value.trim();
+  const toName = $("emailToName").value.trim() || "亲爱的";
+  if (!serviceId || !templateId || !publicKey) {
+    updateEmailStatus("自动发送模式需要填写 EmailJS 的 Service/Template/Public Key。", "error");
+    return;
+  }
+
+  updateEmailStatus("正在发送邮件...", undefined);
+  try {
+    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: publicKey,
+        template_params: {
+          to_email: toEmail,
+          to_name: toName,
+          subject,
+          message: textBody,
+          message_html: htmlBody,
+          plan_label: appState.latestPlan.planLabel,
+        },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    updateEmailStatus("邮件发送成功，快去提醒她查看收件箱吧。", "ok");
+  } catch (error) {
+    updateEmailStatus(
+      "邮件发送失败，请检查 EmailJS 参数，或改用“邮件客户端”模式。",
+      "error"
+    );
+  }
+}
+
+function renderRecommendation(condition, planLabel) {
+  const current = condition || getConditionFromUI();
+  const planData = getPlanData(current, planLabel);
+  appState.latestPlan = planData;
+  const { topOutfits, topMeals, hotMealsPool } = planData;
 
   $("outfitResult").innerHTML = topOutfits
     .map(
@@ -322,11 +561,12 @@ function renderRecommendation(condition, planLabel) {
     </div>
   `;
 
-  $("datePlanTitle").textContent = `${planLabel || "今日推荐"}（天气：${
+  $("datePlanTitle").textContent = `${planData.planLabel}（天气：${
     WEATHER_LABELS[current.weather]
   }，预算：${BUDGET_LABELS[current.budget]}）`;
   $("resultEmpty").classList.add("hidden");
   $("resultWrap").classList.remove("hidden");
+  updateEmailStatus("已生成推荐：可一键导出或发送邮件。", "ok");
 }
 
 function mapWeatherCodeToTag(code, temperature) {
@@ -382,6 +622,9 @@ function bindEvents() {
     renderRecommendation(condition, "明日计划");
   });
   $("autoWeatherBtn").addEventListener("click", fetchWeatherByLocation);
+  $("exportBtn").addEventListener("click", exportPlan);
+  $("copyTextBtn").addEventListener("click", copyPlanText);
+  $("sendEmailBtn").addEventListener("click", sendPlanEmail);
 
   $("outfitForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -424,6 +667,7 @@ function init() {
   loadData();
   renderDataLists();
   bindEvents();
+  updateEmailStatus("提示：先生成推荐，再导出或发送邮件。", undefined);
 }
 
 init();

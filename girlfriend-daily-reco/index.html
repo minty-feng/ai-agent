@@ -169,6 +169,62 @@
             <h3>美食推荐</h3>
             <div id="mealResult"></div>
           </article>
+          <article>
+            <h3>导出与邮件</h3>
+            <p class="sub">
+              可一键导出推荐结果；邮件支持两种方式：直接自动发送（EmailJS）或唤起本地邮箱客户端。
+            </p>
+            <div class="actions">
+              <button id="exportBtn" class="btn secondary" type="button">
+                一键导出推荐
+              </button>
+              <button id="copyTextBtn" class="btn" type="button">复制推荐文案</button>
+            </div>
+            <div class="grid two email-grid">
+              <label>
+                收件人邮箱
+                <input id="emailTo" type="email" placeholder="girlfriend@example.com" />
+              </label>
+              <label>
+                邮件主题
+                <input id="emailSubject" placeholder="今日穿搭与吃饭推荐" />
+              </label>
+              <label>
+                发送方式
+                <select id="emailMode">
+                  <option value="emailjs">自动发送（EmailJS）</option>
+                  <option value="mailto">邮件客户端（mailto）</option>
+                </select>
+              </label>
+            </div>
+            <details class="email-config">
+              <summary>EmailJS 参数（仅“自动发送”模式需要）</summary>
+              <div class="grid two">
+                <label>
+                  Service ID
+                  <input id="emailServiceId" placeholder="service_xxx" />
+                </label>
+                <label>
+                  Template ID
+                  <input id="emailTemplateId" placeholder="template_xxx" />
+                </label>
+                <label>
+                  Public Key
+                  <input id="emailPublicKey" placeholder="public_xxx" />
+                </label>
+                <label>
+                  收件人称呼（可选）
+                  <input id="emailToName" placeholder="宝贝" />
+                </label>
+              </div>
+            </details>
+            <div class="actions">
+              <button id="sendEmailBtn" class="btn primary" type="button">自动发邮件</button>
+            </div>
+            <div id="emailStatus" class="tip neutral">
+              邮件助手：请先生成推荐，再执行导出或发邮件。
+            </div>
+          </article>
         </div>
       </section>
 

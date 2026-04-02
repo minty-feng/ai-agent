@@ -37,8 +37,10 @@ export function ProgressBar({ label, duration, onComplete }: Props) {
   const tick = useAnimationTick()
 
   // Record the global tick value at mount time so we can compute elapsed ticks.
-  const startTickRef = useRef<number | null>(null)
-  if (startTickRef.current === null) startTickRef.current = tick
+  // Initialized directly from the tick at first render — useRef(initialValue)
+  // only evaluates the argument once, so this is safe and avoids side effects
+  // in the render function.
+  const startTickRef = useRef(tick)
 
   // Stabilize callback ref to avoid re-triggering useEffect on every render
   const onCompleteRef = useRef(onComplete)

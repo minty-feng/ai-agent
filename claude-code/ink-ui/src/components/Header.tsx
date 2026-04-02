@@ -5,43 +5,36 @@
  * The header color cycles through the rainbow every 500ms,
  * giving the TUI a lively feel without any external animation lib.
  *
- * The animation stops after a few cycles to avoid perpetual
- * re-renders that can cause terminal jitter when combined
- * with other animated components (Timer, Dice3D, ProgressBar).
+ * Now uses the shared useAnimationTick hook (100 ms base tick) so its
+ * updates land in the same React render as Spinner, ProgressBar, and any
+ * other animated component — one terminal redraw per tick instead of one
+ * per component.
+ *
+ * The animation still stops after a few cycles (MAX_CYCLES ticks) because
+ * once the index is capped the computed color no longer changes, Ink sees
+ * identical output and skips the redraw for this component automatically.
  *
  * Key Ink APIs shown:
  *   useEffect / useState — standard React hooks, identical to web React
  *   Text bold color      — coloured terminal text
  */
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { Box, Text } from "ink"
+import { useAnimationTick } from "../hooks/useAnimationTick.js"
 
 // Cycle through 6 hues for a rainbow-shift effect
 const CYCLE_COLORS = ["green", "cyan", "blue", "magenta", "red", "yellow"] as const
 type CycleColor = (typeof CYCLE_COLORS)[number]
 
-const CYCLE_MS = 500
-// Stop cycling after this many full rotations to reduce unnecessary re-renders
+// Stop cycling after this many ticks (3 full rotations × 6 colors × 100 ms = 1.8 s)
 const MAX_CYCLES = CYCLE_COLORS.length * 3
 
 export function Header() {
-  const [idx, setIdx] = useState(0)
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setIdx((i) => {
-        const next = i + 1
-        if (next >= MAX_CYCLES) {
-          clearInterval(t)
-          return 0
-        }
-        return next
-      })
-    }, CYCLE_MS)
-    return () => clearInterval(t)
-  }, [])
-
+  const tick = useAnimationTick()
+  // Cap at MAX_CYCLES so the color settles; after that every tick produces
+  // the same output and Ink skips the terminal redraw for this component.
+  const idx = Math.min(tick, MAX_CYCLES - 1)
   const color: CycleColor = CYCLE_COLORS[idx % CYCLE_COLORS.length]!
 
   return (

@@ -24,12 +24,18 @@ export type Message = {
 
 type Props = {
   messages: Message[]
+  /**
+   * Called when the live Dice3D animation settles.
+   * The host (App) should replace the message at `index` with a compact
+   * static line so the 18-line dice box is freed from the terminal height.
+   */
+  onDiceComplete?: (index: number, value: number) => void
 }
 
 // Unicode dice face symbols ⚀–⚅
 const DICE_FACES = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"] as const
 
-export const MessageList = React.memo(function MessageList({ messages }: Props) {
+export const MessageList = React.memo(function MessageList({ messages, onDiceComplete }: Props) {
   if (messages.length === 0) {
     return <Text dimColor>No messages yet — type something below, or /help for commands.</Text>
   }
@@ -71,7 +77,12 @@ export const MessageList = React.memo(function MessageList({ messages }: Props) 
             (() => {
               const v = parseInt(msg.text, 10) || 1
               if (i === lastDiceIdx) {
-                return <Dice3D value={v} />
+                return (
+                  <Dice3D
+                    value={v}
+                    onComplete={onDiceComplete ? () => onDiceComplete(i, v) : undefined}
+                  />
+                )
               }
               const face = DICE_FACES[v - 1] ?? "🎲"
               const ratio = v / 6

@@ -5,28 +5,28 @@
  * (src/components/Spinner/) that uses Ink's useEffect + useState to
  * cycle through frames, exactly like this.
  *
+ * Now uses the shared useAnimationTick hook so it updates in the same
+ * render cycle as every other animated component, eliminating the jitter
+ * caused by the old 80 ms independent setInterval firing out-of-sync
+ * with Dice3D (100 ms), Header (500 ms), and ProgressBar (variable).
+ *
  * Key Ink APIs shown:
  *   Text  — renders coloured terminal text
- *   useEffect / useState — standard React hooks, work identically in Ink
  */
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { Text } from "ink"
+import { useAnimationTick } from "../hooks/useAnimationTick.js"
 
 const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-const INTERVAL_MS = 80
 
 type Props = {
   label?: string
 }
 
 export function Spinner({ label = "Thinking…" }: Props) {
-  const [frame, setFrame] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => setFrame((f) => (f + 1) % FRAMES.length), INTERVAL_MS)
-    return () => clearInterval(timer)
-  }, [])
+  const tick = useAnimationTick()
+  const frame = tick % FRAMES.length
 
   return (
     <Text color="cyan">

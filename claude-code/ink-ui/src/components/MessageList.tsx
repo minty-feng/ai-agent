@@ -26,7 +26,7 @@ type Props = {
   messages: Message[]
 }
 
-export function MessageList({ messages }: Props) {
+export const MessageList = React.memo(function MessageList({ messages }: Props) {
   if (messages.length === 0) {
     return <Text dimColor>No messages yet — type something below, or /help for commands.</Text>
   }
@@ -71,4 +71,4 @@ export function MessageList({ messages }: Props) {
       ))}
     </Box>
   )
-}
+})

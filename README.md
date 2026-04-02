@@ -42,4 +42,4 @@ GitHub Markdown Crawler — search GitHub repositories with four strategies (by 
 
 ### [girlfriend-daily-reco](girlfriend-daily-reco/)
 
-轻量级中文网页应用，帮助女友每天解决“穿什么、吃什么”的选择困难。当前版本使用 Python 3.12 + SQLite 后端持久化素材库：支持录入、编辑、删除穿搭/菜品素材，结合天气、心情、场景、饮食偏好与预算做推荐；支持地理定位+实时天气自动识别，并可一键生成明日计划；支持一键导出推荐文案与自动发邮件（后端 SMTP / mailto）；推荐历史记录会写入数据库，便于回看。
+Modern recommendation workspace for solving the daily "what to wear" and "what to eat" decision loop. Built with a Python 3.12 + SQLite backend and a polished browser UI, it supports creating, editing, and deleting outfit/meal assets, generating recommendations from weather, mood, occasion, diet, and budget, auto-detecting live weather from geolocation, producing next-day plans, exporting results, sending them by email (backend SMTP or mailto), generating shareable links, downloading high-resolution image cards, and storing recommendation history for later review.

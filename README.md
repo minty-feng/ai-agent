@@ -32,6 +32,10 @@ Interactive English training app for programmers. Practice technical vocabulary 
 
 Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry points (`attach`, `thread`) and their worker/RPC bridge without pulling in the full application. Includes network configuration, RPC client/server via `postMessage`, and command builder utilities.
 
+### [claude-code](claude-code/)
+
+借鉴 claude-code（Anthropic CLI 工具）的写法风格，用 React + Ink 构建的现代交互式终端 UI 应用。内含全屏 TUI Demo（ink-ui），支持对话交互、3D 骰子动画、彩虹文字、倒计时器、计算器、UUID 生成、Base64 编解码、进度条等 12+ 个斜杠命令。附带终端 UI 库全览（Ink / Blessed / Rich / Textual / Bubble Tea / Ratatui / ncurses）。
+
 ### [github-crawler](github-crawler/)
 
 GitHub Markdown Crawler — search GitHub repositories with four strategies (by name, stars, language, or topic) and download all Markdown files in one click. Python (FastAPI + httpx) backend with a vanilla HTML/CSS/JS frontend for configuring storage paths and triggering downloads.

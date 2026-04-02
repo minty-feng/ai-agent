@@ -14,9 +14,11 @@ import React from "react"
 import { Box, Text } from "ink"
 import { RainbowText } from "./RainbowText.js"
 import { Dice3D } from "./Dice3D.js"
+import { Timer } from "./Timer.js"
+import { ProgressBar } from "./ProgressBar.js"
 
 export type Message = {
-  role: "user" | "assistant" | "system" | "rainbow" | "dice3d"
+  role: "user" | "assistant" | "system" | "rainbow" | "dice3d" | "timer" | "progress"
   text: string
 }
 
@@ -52,6 +54,12 @@ export function MessageList({ messages }: Props) {
           ) : msg.role === "dice3d" ? (
             /* /dice3d — 3D animated dice roll */
             <Dice3D value={parseInt(msg.text, 10) || 1} />
+          ) : msg.role === "timer" ? (
+            /* /timer <seconds> — countdown timer */
+            <Timer seconds={parseInt(msg.text, 10) || 30} />
+          ) : msg.role === "progress" ? (
+            /* /progress [label] — animated progress bar */
+            <ProgressBar label={msg.text} duration={5} />
           ) : (
             /* system messages: command output, errors, info */
             <>

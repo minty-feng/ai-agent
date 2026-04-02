@@ -23,85 +23,90 @@
         <div class="topbar-actions">
           <div class="topbar-status">
             <span class="status-dot"></span>
-            Curated daily companion
+            <div>
+              <strong>Annie 助手已就绪</strong>
+              <p>先设置今天的条件，再查看推荐卡片与分享结果。</p>
+            </div>
           </div>
-          <button class="btn ghost" type="button" data-open-recommendation disabled>
-            打开推荐中心
-          </button>
+          <a class="btn ghost topbar-link" href="#controlTowerSection">开始设置</a>
         </div>
       </header>
 
       <main class="dashboard">
         <section class="panel hero-panel">
           <div class="hero-copy">
-            <p class="eyebrow">Thoughtfully designed daily companion</p>
-            <h2>像 Apple 风格产品一样，安静、克制，却足够精致地解决每天的选择。</h2>
+            <p class="eyebrow">Annie daily assistant</p>
+            <h2>安妮把天气、心情、穿搭和吃饭建议，整理成一张清爽的今日卡片。</h2>
             <p class="hero-text">
-              用更少但更准确的信息层级，承载今日条件、素材录入、推荐结果与分享动作。
-              每一次生成，都像打开一张被认真设计过的私人卡片。
+              顶部区域只保留最关键的信息：今天的状态、推荐生成入口，以及结果如何被查看和分享。
+              让功能与展示保持在同一条视线里，而不是彼此分散。
             </p>
             <div class="hero-badges">
-              <span class="hero-badge">Minimal</span>
-              <span class="hero-badge">Quiet luxury</span>
-              <span class="hero-badge">Shareable</span>
+              <span class="hero-badge">天气与心情</span>
+              <span class="hero-badge">推荐结果</span>
+              <span class="hero-badge">分享输出</span>
             </div>
             <div class="hero-actions">
-              <button class="btn primary" type="button" data-open-recommendation disabled>
-                预览推荐弹窗
-              </button>
+              <a class="btn primary hero-shortcut" href="#controlTowerSection">设置今日条件</a>
               <a class="hero-link" href="#studioSection">进入素材工作台</a>
             </div>
             <div class="hero-story-grid">
               <article class="story-card">
                 <span class="story-index">01</span>
                 <div>
-                  <strong>Personal curation</strong>
-                  <p>让天气、心情与场景被温柔整合，得出更贴近她的答案。</p>
+                  <strong>先理解今天</strong>
+                  <p>把天气、心情、场景和预算收拢成一组简洁输入，避免首屏信息过载。</p>
                 </div>
               </article>
               <article class="story-card">
                 <span class="story-index">02</span>
                 <div>
-                  <strong>Elegant delivery</strong>
-                  <p>结果不再藏在角落，而是成为页面里最值得被看到的内容。</p>
+                  <strong>再交付结果</strong>
+                  <p>推荐中心、分享链接和图片导出会围绕同一份结果展开，展示和动作保持一致。</p>
                 </div>
               </article>
             </div>
           </div>
           <div class="hero-stage">
             <div class="hero-art">
-              <div class="art-orb orb-one"></div>
-              <div class="art-orb orb-two"></div>
-              <div class="art-orb orb-three"></div>
+              <div class="hero-stage-head">
+                <span class="art-chip">Annie assistant</span>
+                <p>把输入条件、推荐结果和分享动作放在同一块展示区域中，一眼就能理解流程。</p>
+              </div>
 
-              <article class="art-card art-card-main">
-                <span class="art-chip">Today spotlight</span>
-                <h3>Curated for today</h3>
-                <p>柔和穿搭、轻盈餐食，以及可以被直接分享的专属计划。</p>
-                <div class="art-tags">
-                  <span>Looks</span>
-                  <span>Meals</span>
-                  <span>Share</span>
-                </div>
-              </article>
+              <div class="assistant-board">
+                <article class="art-card art-card-main">
+                  <span class="mini-card-label">Step 1 · Conditions</span>
+                  <h3>先理解今天</h3>
+                  <p>天气、心情、场景和预算会被整理成轻量输入，作为安妮的推荐依据。</p>
+                  <div class="art-tags">
+                    <span>天气</span>
+                    <span>心情</span>
+                    <span>场景</span>
+                    <span>预算</span>
+                  </div>
+                </article>
 
-              <article class="art-card art-card-floating">
-                <span class="mini-card-label">Share output</span>
-                <strong>Poster ready</strong>
-                <p>高清图片与访问链接，都在同一处被安静处理好。</p>
-              </article>
+                <div class="assistant-side">
+                  <article class="art-card art-card-secondary">
+                    <span class="mini-card-label">Step 2 · Recommendation</span>
+                    <strong>生成穿搭与餐食</strong>
+                    <p>推荐中心会呈现今日搭配、美食建议和一段可直接使用的总结文案。</p>
+                  </article>
 
-              <article class="art-card art-card-glass">
-                <span class="mini-card-label">Mood engine</span>
-                <div class="glass-line">
-                  <span class="glass-dot"></span>
-                  天气、心情、场景与预算被轻柔编排
+                  <article class="art-card art-card-glass">
+                    <span class="mini-card-label">Step 3 · Share</span>
+                    <div class="glass-line">
+                      <span class="glass-dot"></span>
+                      同一份结果可复制文案、生成链接、导出高清图片
+                    </div>
+                    <div class="glass-line">
+                      <span class="glass-dot"></span>
+                      页面展示与后续动作围绕同一张推荐卡片展开
+                    </div>
+                  </article>
                 </div>
-                <div class="glass-line">
-                  <span class="glass-dot"></span>
-                  结果更像一张精致的私人建议卡片
-                </div>
-              </article>
+              </div>
             </div>
 
             <div class="metric-grid">
@@ -126,7 +131,7 @@
 
         <section class="workspace-grid">
           <div class="main-column">
-            <section class="panel condition-panel">
+            <section id="controlTowerSection" class="panel condition-panel">
               <div class="section-heading">
                 <div>
                   <p class="eyebrow">Control tower</p>

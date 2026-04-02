@@ -201,6 +201,23 @@ export function App() {
   const [totalTokens, setTotalTokens] = useState(0)
   const [model, setModel] = useState(DEFAULT_MODEL)
 
+  // Called by MessageList when the live Dice3D animation settles.
+  // Replaces the 18-line animated dice box with a compact single-line result
+  // so it no longer consumes terminal height, preventing content from being
+  // pushed off-screen and appearing "invisible".
+  const handleDiceComplete = useCallback((msgIndex: number, value: number) => {
+    const face = UNICODE_D6[value - 1] ?? "🎲"
+    const ratio = value / 6
+    const label = ratio >= 0.8 ? " ★ Critical!" : ratio <= 1 / 6 ? " ☠ Fumble!" : ""
+    setMessages((prev) =>
+      prev.map((m, i) =>
+        i === msgIndex
+          ? { role: "system", text: `🎲 d6 → ${value}  ${face}${label}` }
+          : m,
+      ),
+    )
+  }, [])
+
   // Submit the current input buffer as a user message
   const submit = useCallback(async () => {
     const text = inputBuffer.trim()
@@ -281,7 +298,7 @@ export function App() {
       <Header />
 
       {/* ── Message history ───────────────────────────── */}
-      <MessageList messages={messages} />
+      <MessageList messages={messages} onDiceComplete={handleDiceComplete} />
 
       {/* ── Spinner (shown while awaiting AI reply) ───── */}
       {loading && <Spinner label="Waiting for response…" />}

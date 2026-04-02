@@ -2,13 +2,23 @@
  * ProgressBar — animated progress bar with percentage
  *
  * Demonstrates:
- *   • Simulated async task progress using useEffect + setTimeout
+ *   • Simulated async task progress driven by the shared animation tick
  *   • Dynamic terminal-width-aware rendering via useStdout
  *   • Color transitions based on completion percentage
+ *
+ * Previously used its own setInterval with a duration-dependent period
+ * (duration × 1000 / 50 ms per step).  Now it subscribes to the shared
+ * useAnimationTick hook (100 ms base) so its state updates are batched in
+ * the same React render as Spinner and Header — one Ink redraw per tick.
+ *
+ * Progress is computed from elapsed ticks since mount:
+ *   totalTicks = duration * 10   (10 ticks per second at 100 ms/tick)
+ *   progress   = elapsedTicks / totalTicks
  */
 
-import React, { useEffect, useState, useRef } from "react"
+import React, { useRef, useEffect } from "react"
 import { Box, Text, useStdout } from "ink"
+import { useAnimationTick } from "../hooks/useAnimationTick.js"
 
 type Props = {
   /** Label to show next to the bar */
@@ -24,28 +34,29 @@ export function ProgressBar({ label, duration, onComplete }: Props) {
   const termWidth = stdout?.columns ?? 80
   const barWidth = Math.min(40, termWidth - 30)
 
-  const [progress, setProgress] = useState(0)
+  const tick = useAnimationTick()
+
+  // Record the global tick value at mount time so we can compute elapsed ticks.
+  // Initialized directly from the tick at first render — useRef(initialValue)
+  // only evaluates the argument once, so this is safe and avoids side effects
+  // in the render function.
+  const startTickRef = useRef(tick)
+
   // Stabilize callback ref to avoid re-triggering useEffect on every render
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
+  const completedRef = useRef(false)
+
+  const totalTicks = duration * 10  // 100 ms per tick → 10 ticks per second
+  const elapsedTicks = tick - startTickRef.current
+  const progress = Math.min(elapsedTicks / totalTicks, 1)
 
   useEffect(() => {
-    const steps = 50
-    const interval = (duration * 1000) / steps
-    let step = 0
-
-    const timer = setInterval(() => {
-      step++
-      const p = Math.min(step / steps, 1)
-      setProgress(p)
-      if (step >= steps) {
-        clearInterval(timer)
-        onCompleteRef.current?.()
-      }
-    }, interval)
-
-    return () => clearInterval(timer)
-  }, [duration])
+    if (progress >= 1 && !completedRef.current) {
+      completedRef.current = true
+      onCompleteRef.current?.()
+    }
+  }, [progress])
 
   const filled = Math.round(progress * barWidth)
   const empty = barWidth - filled

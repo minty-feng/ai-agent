@@ -55,9 +55,12 @@ const TOMORROW_MOOD_FALLBACK = {
 const store = {
   outfits: [],
   meals: [],
+  history: [],
 };
 const appState = {
   latestPlan: null,
+  editingOutfitId: null,
+  editingMealId: null,
 };
 
 function updateBackendStatus(text, type) {
@@ -82,16 +85,23 @@ async function apiRequest(path, options = {}) {
 
 async function loadData() {
   try {
-    const [outfits, meals] = await Promise.all([apiRequest("/outfits"), apiRequest("/meals")]);
+    const [outfits, meals, history] = await Promise.all([
+      apiRequest("/outfits"),
+      apiRequest("/meals"),
+      apiRequest("/history?limit=30"),
+    ]);
     store.outfits = outfits;
     store.meals = meals;
+    store.history = history;
     updateBackendStatus("数据存储：Python + SQLite 已连接", "ok");
   } catch (error) {
     store.outfits = [];
     store.meals = [];
+    store.history = [];
     updateBackendStatus("后端连接失败，请先启动 Python 服务。", "error");
   }
   renderDataLists();
+  renderHistoryList();
 }
 
 function parseTags(input) {
@@ -134,6 +144,10 @@ function renderDataLists() {
         <strong>${x.name}</strong>
         <div>${x.style || "未填写风格"} · 天气: ${x.weather.join("/") || "-"}</div>
         <div>预算：${BUDGET_LABELS[x.budget] || "不限"}</div>
+        <div class="item-actions">
+          <button class="btn small" type="button" data-action="edit-outfit" data-id="${x.id}">编辑</button>
+          <button class="btn small danger" type="button" data-action="delete-outfit" data-id="${x.id}">删除</button>
+        </div>
       </li>`
     )
     .join("");
@@ -145,6 +159,10 @@ function renderDataLists() {
         <strong>${x.name}</strong>
         <div>${x.flavor || "未填写口味"} · 标签: ${x.diets.join("/") || "-"}</div>
         <div>预算：${BUDGET_LABELS[x.budget] || "不限"}</div>
+        <div class="item-actions">
+          <button class="btn small" type="button" data-action="edit-meal" data-id="${x.id}">编辑</button>
+          <button class="btn small danger" type="button" data-action="delete-meal" data-id="${x.id}">删除</button>
+        </div>
       </li>`
     )
     .join("");
@@ -157,6 +175,19 @@ function renderDataLists() {
         <a href="${x.link}" target="_blank" rel="noopener noreferrer">去看看</a>
       </li>`
   ).join("");
+}
+
+function renderHistoryList() {
+  $("historyList").innerHTML = store.history
+    .map(
+      (x) => `
+      <li>
+        <div><strong>${x.plan_label}</strong></div>
+        <div>${new Date(x.created_at).toLocaleString()}</div>
+        <div>天气：${WEATHER_LABELS[x.condition?.weather] || "-"}</div>
+      </li>`
+    )
+    .join("");
 }
 
 function getConditionFromUI() {
@@ -396,49 +427,45 @@ async function sendPlanEmail() {
     return;
   }
 
-  const serviceId = $("emailServiceId").value.trim();
-  const templateId = $("emailTemplateId").value.trim();
-  const publicKey = $("emailPublicKey").value.trim();
-  const toName = $("emailToName").value.trim() || "亲爱的";
-  if (!serviceId || !templateId || !publicKey) {
-    updateEmailStatus("自动发送模式需要填写 EmailJS 的 Service/Template/Public Key。", "error");
-    return;
-  }
-
   updateEmailStatus("正在发送邮件...", undefined);
   try {
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    await apiRequest("/email/send", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
-        service_id: serviceId,
-        template_id: templateId,
-        user_id: publicKey,
-        template_params: {
-          to_email: toEmail,
-          to_name: toName,
-          subject,
-          message: textBody,
-          message_html: htmlBody,
-          plan_label: appState.latestPlan.planLabel,
-        },
+        to_email: toEmail,
+        subject,
+        text: textBody,
+        html: htmlBody,
       }),
     });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
     updateEmailStatus("邮件发送成功，快去提醒她查看收件箱吧。", "ok");
   } catch (error) {
-    updateEmailStatus(
-      "邮件发送失败，请检查 EmailJS 参数，或改用“邮件客户端”模式。",
-      "error"
-    );
+    updateEmailStatus("邮件发送失败，请检查后端 SMTP 配置，或改用“邮件客户端”模式。", "error");
   }
 }
 
-function renderRecommendation(condition, planLabel) {
+async function persistPlanHistory(planData) {
+  try {
+    const saved = await apiRequest("/history", {
+      method: "POST",
+      body: JSON.stringify({
+        plan_label: planData.planLabel,
+        condition: planData.condition,
+        top_outfits: planData.topOutfits,
+        top_meals: planData.topMeals,
+        hot_meals: planData.hotMealsPool.slice(0, 2),
+        created_at: planData.createdAt,
+      }),
+    });
+    store.history.unshift(saved);
+    store.history = store.history.slice(0, 30);
+    renderHistoryList();
+  } catch (error) {
+    updateBackendStatus("推荐已生成，但保存历史记录失败。", "error");
+  }
+}
+
+async function renderRecommendation(condition, planLabel) {
   const current = condition || getConditionFromUI();
   const planData = getPlanData(current, planLabel);
   appState.latestPlan = planData;
@@ -494,6 +521,7 @@ function renderRecommendation(condition, planLabel) {
   $("resultEmpty").classList.add("hidden");
   $("resultWrap").classList.remove("hidden");
   updateEmailStatus("已生成推荐：可一键导出或发送邮件。", "ok");
+  await persistPlanHistory(planData);
 }
 
 function mapWeatherCodeToTag(code, temperature) {
@@ -541,17 +569,26 @@ async function fetchWeatherByLocation() {
 }
 
 function bindEvents() {
-  $("recommendBtn").addEventListener("click", () =>
+  $("recommendBtn").addEventListener("click", async () =>
     renderRecommendation(getConditionFromUI(), "今日推荐")
   );
-  $("tomorrowBtn").addEventListener("click", () => {
+  $("tomorrowBtn").addEventListener("click", async () => {
     const condition = buildTomorrowCondition(getConditionFromUI());
-    renderRecommendation(condition, "明日计划");
+    await renderRecommendation(condition, "明日计划");
   });
   $("autoWeatherBtn").addEventListener("click", fetchWeatherByLocation);
   $("exportBtn").addEventListener("click", exportPlan);
   $("copyTextBtn").addEventListener("click", copyPlanText);
   $("sendEmailBtn").addEventListener("click", sendPlanEmail);
+  $("refreshHistoryBtn").addEventListener("click", async () => {
+    try {
+      store.history = await apiRequest("/history?limit=30");
+      renderHistoryList();
+      updateBackendStatus("历史记录已刷新。", "ok");
+    } catch (error) {
+      updateBackendStatus("刷新历史失败。", "error");
+    }
+  });
 
   $("outfitForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -566,11 +603,21 @@ function bindEvents() {
     };
     if (!newItem.name) return;
     try {
-      const created = await apiRequest("/outfits", {
-        method: "POST",
-        body: JSON.stringify(newItem),
-      });
-      store.outfits.unshift(created);
+      if (appState.editingOutfitId) {
+        const updated = await apiRequest(`/outfits/${appState.editingOutfitId}`, {
+          method: "PUT",
+          body: JSON.stringify(newItem),
+        });
+        store.outfits = store.outfits.map((x) => (x.id === updated.id ? updated : x));
+        appState.editingOutfitId = null;
+        $("outfitSubmitBtn").textContent = "添加到穿搭素材库";
+      } else {
+        const created = await apiRequest("/outfits", {
+          method: "POST",
+          body: JSON.stringify(newItem),
+        });
+        store.outfits.unshift(created);
+      }
       renderDataLists();
       e.target.reset();
       updateBackendStatus("穿搭素材已保存到 SQLite。", "ok");
@@ -592,16 +639,88 @@ function bindEvents() {
     };
     if (!newItem.name) return;
     try {
-      const created = await apiRequest("/meals", {
-        method: "POST",
-        body: JSON.stringify(newItem),
-      });
-      store.meals.unshift(created);
+      if (appState.editingMealId) {
+        const updated = await apiRequest(`/meals/${appState.editingMealId}`, {
+          method: "PUT",
+          body: JSON.stringify(newItem),
+        });
+        store.meals = store.meals.map((x) => (x.id === updated.id ? updated : x));
+        appState.editingMealId = null;
+        $("mealSubmitBtn").textContent = "添加到菜品素材库";
+      } else {
+        const created = await apiRequest("/meals", {
+          method: "POST",
+          body: JSON.stringify(newItem),
+        });
+        store.meals.unshift(created);
+      }
       renderDataLists();
       e.target.reset();
       updateBackendStatus("菜品素材已保存到 SQLite。", "ok");
     } catch (error) {
       updateBackendStatus("保存菜品失败，请检查后端是否运行。", "error");
+    }
+  });
+
+  $("outfitList").addEventListener("click", async (e) => {
+    const button = e.target.closest("button[data-action]");
+    if (!button) return;
+    const id = Number(button.dataset.id);
+    const action = button.dataset.action;
+    const item = store.outfits.find((x) => x.id === id);
+    if (!item) return;
+    if (action === "edit-outfit") {
+      appState.editingOutfitId = id;
+      $("outfitName").value = item.name;
+      $("outfitStyle").value = item.style || "";
+      $("outfitWeather").value = item.weather.join(",");
+      $("outfitMood").value = item.moods.join(",");
+      $("outfitOccasion").value = item.occasions.join(",");
+      $("outfitBudget").value = item.budget || "budget";
+      $("outfitLink").value = item.link || "";
+      $("outfitSubmitBtn").textContent = "保存穿搭修改";
+      return;
+    }
+    if (action === "delete-outfit") {
+      try {
+        await apiRequest(`/outfits/${id}`, { method: "DELETE" });
+        store.outfits = store.outfits.filter((x) => x.id !== id);
+        renderDataLists();
+        updateBackendStatus("穿搭素材已删除。", "ok");
+      } catch (error) {
+        updateBackendStatus("删除穿搭失败。", "error");
+      }
+    }
+  });
+
+  $("mealList").addEventListener("click", async (e) => {
+    const button = e.target.closest("button[data-action]");
+    if (!button) return;
+    const id = Number(button.dataset.id);
+    const action = button.dataset.action;
+    const item = store.meals.find((x) => x.id === id);
+    if (!item) return;
+    if (action === "edit-meal") {
+      appState.editingMealId = id;
+      $("mealName").value = item.name;
+      $("mealFlavor").value = item.flavor || "";
+      $("mealWeather").value = item.weather.join(",");
+      $("mealMood").value = item.moods.join(",");
+      $("mealDiet").value = item.diets.join(",");
+      $("mealBudget").value = item.budget || "budget";
+      $("mealLink").value = item.link || "";
+      $("mealSubmitBtn").textContent = "保存菜品修改";
+      return;
+    }
+    if (action === "delete-meal") {
+      try {
+        await apiRequest(`/meals/${id}`, { method: "DELETE" });
+        store.meals = store.meals.filter((x) => x.id !== id);
+        renderDataLists();
+        updateBackendStatus("菜品素材已删除。", "ok");
+      } catch (error) {
+        updateBackendStatus("删除菜品失败。", "error");
+      }
     }
   });
 }

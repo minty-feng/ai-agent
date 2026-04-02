@@ -1,12 +1,15 @@
 import json
+import os
+import smtplib
 import sqlite3
+from datetime import datetime, timezone
+from email.message import EmailMessage
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -132,6 +135,23 @@ class MealInput(BaseModel):
     link: str = ""
 
 
+class HistoryInput(BaseModel):
+    plan_label: str = Field(min_length=1)
+    condition: dict[str, Any] = Field(default_factory=dict)
+    top_outfits: list[dict[str, Any]] = Field(default_factory=list)
+    top_meals: list[dict[str, Any]] = Field(default_factory=list)
+    hot_meals: list[str] = Field(default_factory=list)
+    created_at: str = ""
+
+
+class EmailSendInput(BaseModel):
+    to_email: str = Field(min_length=3)
+    to_name: str = ""
+    subject: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    html: str = ""
+
+
 def db_connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -152,6 +172,20 @@ def parse_tags(value: str | None) -> list[str]:
     except json.JSONDecodeError:
         return []
     return []
+
+
+def parse_json(value: str | None, fallback: Any) -> Any:
+    if not value:
+        return fallback
+    try:
+        parsed = json.loads(value)
+        if isinstance(fallback, list) and isinstance(parsed, list):
+            return parsed
+        if isinstance(fallback, dict) and isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        return fallback
+    return fallback
 
 
 def ensure_db() -> None:
@@ -183,6 +217,19 @@ def ensure_db() -> None:
                 budget TEXT NOT NULL DEFAULT 'budget',
                 link TEXT NOT NULL DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS recommendation_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plan_label TEXT NOT NULL,
+                condition_json TEXT NOT NULL DEFAULT '{}',
+                outfits_json TEXT NOT NULL DEFAULT '[]',
+                meals_json TEXT NOT NULL DEFAULT '[]',
+                hot_meals_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -252,6 +299,65 @@ def row_to_meal(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
+def row_to_history(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "plan_label": row["plan_label"],
+        "condition": parse_json(row["condition_json"], {}),
+        "top_outfits": parse_json(row["outfits_json"], []),
+        "top_meals": parse_json(row["meals_json"], []),
+        "hot_meals": parse_json(row["hot_meals_json"], []),
+        "created_at": row["created_at"],
+    }
+
+
+def must_find_outfit(conn: sqlite3.Connection, outfit_id: int) -> sqlite3.Row:
+    row = conn.execute("SELECT * FROM outfits WHERE id = ?", (outfit_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="outfit not found")
+    return row
+
+
+def must_find_meal(conn: sqlite3.Connection, meal_id: int) -> sqlite3.Row:
+    row = conn.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="meal not found")
+    return row
+
+
+def send_email_via_smtp(payload: EmailSendInput) -> None:
+    host = os.getenv("SMTP_HOST", "").strip()
+    port = int(os.getenv("SMTP_PORT", "587").strip() or "587")
+    username = os.getenv("SMTP_USERNAME", "").strip()
+    password = os.getenv("SMTP_PASSWORD", "").strip()
+    from_email = os.getenv("SMTP_FROM_EMAIL", "").strip()
+    use_tls = os.getenv("SMTP_USE_TLS", "true").strip().lower() in {"1", "true", "yes"}
+
+    if not host or not from_email:
+        raise HTTPException(
+            status_code=400,
+            detail="SMTP not configured. Required: SMTP_HOST, SMTP_FROM_EMAIL.",
+        )
+
+    msg = EmailMessage()
+    msg["From"] = from_email
+    msg["To"] = payload.to_email
+    msg["Subject"] = payload.subject
+    msg.set_content(payload.text)
+    if payload.html:
+        msg.add_alternative(payload.html, subtype="html")
+
+    try:
+        with smtplib.SMTP(host, port, timeout=20) as server:
+            if use_tls:
+                server.starttls()
+            if username:
+                server.login(username, password)
+            server.send_message(msg)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"smtp send failed: {exc}") from exc
+
+
 app = FastAPI(title="Girlfriend Daily Reco API")
 app.add_middleware(
     CORSMiddleware,
@@ -302,6 +408,41 @@ def create_outfit(payload: OutfitInput) -> dict[str, Any]:
     return row_to_outfit(row)
 
 
+@app.put("/api/outfits/{outfit_id}")
+def update_outfit(outfit_id: int, payload: OutfitInput) -> dict[str, Any]:
+    with db_connect() as conn:
+        must_find_outfit(conn, outfit_id)
+        conn.execute(
+            """
+            UPDATE outfits
+            SET name = ?, style = ?, weather = ?, moods = ?, occasions = ?, budget = ?, link = ?
+            WHERE id = ?
+            """,
+            (
+                payload.name.strip(),
+                payload.style.strip(),
+                serialize_tags(payload.weather),
+                serialize_tags(payload.moods),
+                serialize_tags(payload.occasions),
+                payload.budget.strip() or "budget",
+                payload.link.strip(),
+                outfit_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM outfits WHERE id = ?", (outfit_id,)).fetchone()
+    return row_to_outfit(row)
+
+
+@app.delete("/api/outfits/{outfit_id}")
+def delete_outfit(outfit_id: int) -> dict[str, bool]:
+    with db_connect() as conn:
+        must_find_outfit(conn, outfit_id)
+        conn.execute("DELETE FROM outfits WHERE id = ?", (outfit_id,))
+        conn.commit()
+    return {"ok": True}
+
+
 @app.get("/api/meals")
 def list_meals() -> list[dict[str, Any]]:
     with db_connect() as conn:
@@ -330,6 +471,82 @@ def create_meal(payload: MealInput) -> dict[str, Any]:
         conn.commit()
         row = conn.execute("SELECT * FROM meals WHERE id = ?", (cur.lastrowid,)).fetchone()
     return row_to_meal(row)
+
+
+@app.put("/api/meals/{meal_id}")
+def update_meal(meal_id: int, payload: MealInput) -> dict[str, Any]:
+    with db_connect() as conn:
+        must_find_meal(conn, meal_id)
+        conn.execute(
+            """
+            UPDATE meals
+            SET name = ?, flavor = ?, weather = ?, moods = ?, diets = ?, budget = ?, link = ?
+            WHERE id = ?
+            """,
+            (
+                payload.name.strip(),
+                payload.flavor.strip(),
+                serialize_tags(payload.weather),
+                serialize_tags(payload.moods),
+                serialize_tags(payload.diets),
+                payload.budget.strip() or "budget",
+                payload.link.strip(),
+                meal_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
+    return row_to_meal(row)
+
+
+@app.delete("/api/meals/{meal_id}")
+def delete_meal(meal_id: int) -> dict[str, bool]:
+    with db_connect() as conn:
+        must_find_meal(conn, meal_id)
+        conn.execute("DELETE FROM meals WHERE id = ?", (meal_id,))
+        conn.commit()
+    return {"ok": True}
+
+
+@app.get("/api/history")
+def list_history(limit: int = Query(default=20, ge=1, le=200)) -> list[dict[str, Any]]:
+    with db_connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM recommendation_history ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [row_to_history(row) for row in rows]
+
+
+@app.post("/api/history")
+def create_history(payload: HistoryInput) -> dict[str, Any]:
+    created_at_value = payload.created_at.strip() or datetime.now(timezone.utc).isoformat()
+    with db_connect() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO recommendation_history
+            (plan_label, condition_json, outfits_json, meals_json, hot_meals_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload.plan_label.strip(),
+                json.dumps(payload.condition, ensure_ascii=False),
+                json.dumps(payload.top_outfits, ensure_ascii=False),
+                json.dumps(payload.top_meals, ensure_ascii=False),
+                json.dumps(payload.hot_meals, ensure_ascii=False),
+                created_at_value,
+            ),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM recommendation_history WHERE id = ?", (cur.lastrowid,)
+        ).fetchone()
+    return row_to_history(row)
+
+
+@app.post("/api/email/send")
+def send_email(payload: EmailSendInput) -> dict[str, str]:
+    send_email_via_smtp(payload)
+    return {"status": "sent"}
 
 
 @app.exception_handler(Exception)

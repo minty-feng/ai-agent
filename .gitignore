@@ -5,3 +5,4 @@ __pycache__/
 node_modules/
 .venv/
 *.egg-info/
+girlfriend-daily-reco/data.db

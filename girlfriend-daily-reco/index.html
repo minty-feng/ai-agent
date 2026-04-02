@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>女友每日穿搭与美食推荐</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>女友每日穿搭 & 吃饭推荐器</h1>
+      <p>输入素材，按天气、心情、场景智能推荐，还能看到热门单品与今日菜品。</p>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h2>1) 今日条件</h2>
+        <div id="backendStatus" class="tip neutral">
+          数据存储：正在连接 Python + SQLite 后端...
+        </div>
+        <div id="weatherStatus" class="tip">
+          天气助手：可点击“自动识别天气”，会根据你当前位置设置天气条件。
+        </div>
+        <div class="grid two">
+          <label>
+            天气
+            <select id="weather">
+              <option value="sunny">晴天</option>
+              <option value="cloudy">多云</option>
+              <option value="rainy">雨天</option>
+              <option value="cold">降温/冷天</option>
+              <option value="hot">炎热</option>
+            </select>
+          </label>
+          <label>
+            心情
+            <select id="mood">
+              <option value="happy">开心</option>
+              <option value="calm">平静</option>
+              <option value="tired">疲惫</option>
+              <option value="romantic">浪漫</option>
+              <option value="focused">专注上班</option>
+            </select>
+          </label>
+          <label>
+            场景
+            <select id="occasion">
+              <option value="work">上班/通勤</option>
+              <option value="date">约会</option>
+              <option value="casual">休闲逛街</option>
+              <option value="home">宅家</option>
+            </select>
+          </label>
+          <label>
+            饮食偏好
+            <select id="diet">
+              <option value="all">都可以</option>
+              <option value="light">清淡低负担</option>
+              <option value="comfort">治愈系</option>
+              <option value="spicy">想吃辣</option>
+              <option value="protein">高蛋白</option>
+            </select>
+          </label>
+          <label>
+            预算偏好
+            <select id="budget">
+              <option value="all">不限</option>
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button id="autoWeatherBtn" class="btn secondary" type="button">
+            自动识别天气
+          </button>
+          <button id="recommendBtn" class="btn primary" type="button">生成今日推荐</button>
+          <button id="tomorrowBtn" class="btn" type="button">生成明日计划</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2) 素材录入：穿搭</h2>
+        <form id="outfitForm" class="grid two">
+          <label>
+            名称
+            <input id="outfitName" required placeholder="如：奶油白针织开衫 + 半身裙" />
+          </label>
+          <label>
+            风格
+            <input id="outfitStyle" placeholder="如：温柔、通勤、韩系" />
+          </label>
+          <label>
+            适合天气（逗号分隔）
+            <input id="outfitWeather" placeholder="sunny,cloudy,cold" />
+          </label>
+          <label>
+            适合心情（逗号分隔）
+            <input id="outfitMood" placeholder="happy,calm,romantic" />
+          </label>
+          <label>
+            适合场景（逗号分隔）
+            <input id="outfitOccasion" placeholder="work,date,casual" />
+          </label>
+          <label>
+            购买链接（可选）
+            <input id="outfitLink" placeholder="https://..." />
+          </label>
+          <label>
+            预算标签
+            <select id="outfitBudget">
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
+          </label>
+          <div class="actions action-compact">
+            <button id="outfitSubmitBtn" class="btn" type="submit">添加到穿搭素材库</button>
+            <button id="outfitCancelEditBtn" class="btn secondary hidden" type="button">
+              取消编辑
+            </button>
+          </div>
+        </form>
+        <ul id="outfitList" class="item-list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>3) 素材录入：菜品</h2>
+        <form id="mealForm" class="grid two">
+          <label>
+            菜名
+            <input id="mealName" required placeholder="如：番茄肥牛乌冬" />
+          </label>
+          <label>
+            口味
+            <input id="mealFlavor" placeholder="如：酸甜、麻辣、清淡" />
+          </label>
+          <label>
+            适合天气（逗号分隔）
+            <input id="mealWeather" placeholder="rainy,cold,cloudy" />
+          </label>
+          <label>
+            适合心情（逗号分隔）
+            <input id="mealMood" placeholder="tired,happy,romantic" />
+          </label>
+          <label>
+            饮食标签（逗号分隔）
+            <input id="mealDiet" placeholder="comfort,light,protein,spicy" />
+          </label>
+          <label>
+            推荐店铺/链接（可选）
+            <input id="mealLink" placeholder="https://..." />
+          </label>
+          <label>
+            预算标签
+            <select id="mealBudget">
+              <option value="budget">平价</option>
+              <option value="mid">中档</option>
+            </select>
+          </label>
+          <div class="actions action-compact">
+            <button id="mealSubmitBtn" class="btn" type="submit">添加到菜品素材库</button>
+            <button id="mealCancelEditBtn" class="btn secondary hidden" type="button">
+              取消编辑
+            </button>
+          </div>
+        </form>
+        <ul id="mealList" class="item-list"></ul>
+      </section>
+
+      <section class="card result-card">
+        <h2>4) 今日结果</h2>
+        <div id="resultEmpty" class="empty">点击“生成今日推荐”后显示结果</div>
+        <div id="resultWrap" class="hidden">
+          <article id="datePlanTitleWrap">
+            <h3 id="datePlanTitle">今日推荐</h3>
+          </article>
+          <article>
+            <h3>穿搭推荐</h3>
+            <div id="outfitResult"></div>
+          </article>
+          <article>
+            <h3>美食推荐</h3>
+            <div id="mealResult"></div>
+          </article>
+          <article>
+            <h3>导出与邮件</h3>
+            <p class="sub">
+              可一键导出推荐结果；邮件支持服务端 SMTP 自动发送，或唤起本地邮箱客户端发送。
+            </p>
+            <div class="actions">
+              <button id="exportBtn" class="btn secondary" type="button">
+                一键导出推荐
+              </button>
+              <button id="copyTextBtn" class="btn" type="button">复制推荐文案</button>
+            </div>
+            <div class="grid two email-grid">
+              <label>
+                收件人邮箱
+                <input id="emailTo" type="email" placeholder="girlfriend@example.com" />
+              </label>
+              <label>
+                邮件主题
+                <input id="emailSubject" placeholder="今日穿搭与吃饭推荐" />
+              </label>
+              <label>
+                发送方式
+                <select id="emailMode">
+                  <option value="backend_smtp">自动发送（后端 SMTP）</option>
+                  <option value="mailto">邮件客户端（mailto）</option>
+                </select>
+              </label>
+            </div>
+            <div class="tip neutral">
+              SMTP 由后端环境变量配置（SMTP_HOST / SMTP_PORT / SMTP_USERNAME /
+              SMTP_PASSWORD / SMTP_FROM_EMAIL / SMTP_USE_TLS），前端无需保存敏感密钥。
+            </div>
+            <div class="actions">
+              <button id="sendEmailBtn" class="btn primary" type="button">自动发邮件</button>
+            </div>
+            <div id="emailStatus" class="tip neutral">
+              邮件助手：请先生成推荐，再执行导出或发邮件。
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>5) 当下流行单品（可买）</h2>
+        <p class="sub">结合 2026 春夏常见趋势整理，点击可跳转示例购买链接。</p>
+        <ul id="trendList" class="item-list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>6) 推荐历史记录</h2>
+        <div class="actions">
+          <button id="refreshHistoryBtn" class="btn secondary" type="button">刷新历史</button>
+        </div>
+        <ul id="historyList" class="item-list"></ul>
+      </section>
+    </main>
+
+    <footer class="footer">Made with love · 每天少纠结，多开心</footer>
+    <script src="/static/app.js"></script>
+  </body>
+  </html>

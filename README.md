@@ -39,3 +39,7 @@ Modern interactive terminal UI application built with React + Ink, inspired by c
 ### [github-crawler](github-crawler/)
 
 GitHub Markdown Crawler — search GitHub repositories with four strategies (by name, stars, language, or topic) and download all Markdown files in one click. Python (FastAPI + httpx) backend with a vanilla HTML/CSS/JS frontend for configuring storage paths and triggering downloads.
+
+### [girlfriend-daily-reco](girlfriend-daily-reco/)
+
+轻量级中文网页应用，帮助女友每天解决“穿什么、吃什么”的选择困难。当前版本使用 Python 3.12 + SQLite 后端持久化素材库：支持录入、编辑、删除穿搭/菜品素材，结合天气、心情、场景、饮食偏好与预算做推荐；支持地理定位+实时天气自动识别，并可一键生成明日计划；支持一键导出推荐文案与自动发邮件（后端 SMTP / mailto）；推荐历史记录会写入数据库，便于回看。

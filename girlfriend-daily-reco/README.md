@@ -12,24 +12,24 @@
 
 ## 技术栈
 
-- 后端：Python + FastAPI + SQLite
+- 后端：Python 3.12 + FastAPI + SQLite
 - 前端：原生 HTML / CSS / JavaScript（由 FastAPI 托管）
 
 ## 启动方式
 
-### 方式 1：推荐（自动创建虚拟环境）
+### 方式 1：推荐（Python 3.12，自动创建虚拟环境）
 
 ```bash
 cd girlfriend-daily-reco
 ./start.sh
 ```
 
-### 方式 2：系统 Python（无 venv）
+### 方式 2：系统 Python 3.12（无 venv）
 
 ```bash
 cd girlfriend-daily-reco
-python3 -m pip install --user -r requirements.txt
-python3 -m uvicorn server:app --host 0.0.0.0 --port 8000
+python3.12 -m pip install --user -r requirements.txt
+python3.12 -m uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
 启动后访问：

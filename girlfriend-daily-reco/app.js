@@ -190,6 +190,18 @@ function renderHistoryList() {
     .join("");
 }
 
+function resetOutfitFormEditing() {
+  appState.editingOutfitId = null;
+  $("outfitSubmitBtn").textContent = "添加到穿搭素材库";
+  $("outfitCancelEditBtn").classList.add("hidden");
+}
+
+function resetMealFormEditing() {
+  appState.editingMealId = null;
+  $("mealSubmitBtn").textContent = "添加到菜品素材库";
+  $("mealCancelEditBtn").classList.add("hidden");
+}
+
 function getConditionFromUI() {
   return {
     weather: $("weather").value,
@@ -609,8 +621,7 @@ function bindEvents() {
           body: JSON.stringify(newItem),
         });
         store.outfits = store.outfits.map((x) => (x.id === updated.id ? updated : x));
-        appState.editingOutfitId = null;
-        $("outfitSubmitBtn").textContent = "添加到穿搭素材库";
+        resetOutfitFormEditing();
       } else {
         const created = await apiRequest("/outfits", {
           method: "POST",
@@ -645,8 +656,7 @@ function bindEvents() {
           body: JSON.stringify(newItem),
         });
         store.meals = store.meals.map((x) => (x.id === updated.id ? updated : x));
-        appState.editingMealId = null;
-        $("mealSubmitBtn").textContent = "添加到菜品素材库";
+        resetMealFormEditing();
       } else {
         const created = await apiRequest("/meals", {
           method: "POST",
@@ -679,6 +689,7 @@ function bindEvents() {
       $("outfitBudget").value = item.budget || "budget";
       $("outfitLink").value = item.link || "";
       $("outfitSubmitBtn").textContent = "保存穿搭修改";
+      $("outfitCancelEditBtn").classList.remove("hidden");
       return;
     }
     if (action === "delete-outfit") {
@@ -710,6 +721,7 @@ function bindEvents() {
       $("mealBudget").value = item.budget || "budget";
       $("mealLink").value = item.link || "";
       $("mealSubmitBtn").textContent = "保存菜品修改";
+      $("mealCancelEditBtn").classList.remove("hidden");
       return;
     }
     if (action === "delete-meal") {
@@ -722,6 +734,15 @@ function bindEvents() {
         updateBackendStatus("删除菜品失败。", "error");
       }
     }
+  });
+
+  $("outfitCancelEditBtn").addEventListener("click", () => {
+    resetOutfitFormEditing();
+    $("outfitForm").reset();
+  });
+  $("mealCancelEditBtn").addEventListener("click", () => {
+    resetMealFormEditing();
+    $("mealForm").reset();
   });
 }
 

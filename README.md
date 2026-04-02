@@ -34,7 +34,7 @@ Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry 
 
 ### [claude-code](claude-code/)
 
-借鉴 claude-code（Anthropic CLI 工具）的写法风格，用 React + Ink 构建的现代交互式终端 UI 应用。内含全屏 TUI Demo（ink-ui），支持对话交互、3D 骰子动画、彩虹文字、倒计时器、计算器、UUID 生成、Base64 编解码、进度条等 12+ 个斜杠命令。附带终端 UI 库全览（Ink / Blessed / Rich / Textual / Bubble Tea / Ratatui / ncurses）。
+Modern interactive terminal UI application built with React + Ink, inspired by claude-code (Anthropic CLI tool). Includes a full-screen TUI demo (ink-ui) supporting chat interaction, 3D dice animation, rainbow text, countdown timer, calculator, UUID generation, Base64 encode/decode, progress bar, and 12+ slash commands. Also includes a terminal UI library overview (Ink / Blessed / Rich / Textual / Bubble Tea / Ratatui / ncurses).
 
 ### [github-crawler](github-crawler/)
 

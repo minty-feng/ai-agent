@@ -64,20 +64,21 @@ export const MessageList = React.memo(function MessageList({ messages }: Props) 
             </>
           ) : msg.role === "dice3d" ? (
             /* /dice3d — animated 3D dice roll (live only for the latest roll) */
-            i === lastDiceIdx
-              ? <Dice3D value={parseInt(msg.text, 10) || 1} />
-              : (() => {
-                  const v = parseInt(msg.text, 10) || 1
-                  const face = DICE_FACES[v - 1] ?? "🎲"
-                  const ratio = v / 6
-                  const label = ratio >= 0.8 ? " ★ Critical!" : ratio <= 1 / 6 ? " ☠ Fumble!" : ""
-                  const color = v >= 5 ? "green" : v >= 3 ? "yellow" : "red"
-                  return (
-                    <Text color={color} bold>
-                      🎲 d6 → {v}  {face}{label}
-                    </Text>
-                  )
-                })()
+            (() => {
+              const v = parseInt(msg.text, 10) || 1
+              if (i === lastDiceIdx) {
+                return <Dice3D value={v} />
+              }
+              const face = DICE_FACES[v - 1] ?? "🎲"
+              const ratio = v / 6
+              const label = ratio >= 0.8 ? " ★ Critical!" : ratio <= 1 / 6 ? " ☠ Fumble!" : ""
+              const color = v >= 5 ? "green" : v >= 3 ? "yellow" : "red"
+              return (
+                <Text color={color} bold>
+                  🎲 d6 → {v}  {face}{label}
+                </Text>
+              )
+            })()
           ) : msg.role === "timer" ? (
             /* /timer <seconds> — countdown timer */
             <Timer seconds={parseInt(msg.text, 10) || 30} />

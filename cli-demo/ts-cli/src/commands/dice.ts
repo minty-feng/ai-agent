@@ -85,6 +85,105 @@ function statsLine(rolls: number[], sides: number): string {
   return `  ${parts.join("   ")}`
 }
 
+// ── 3D Isometric dice pip layouts ──────────────────────────────────────────
+// Each face value (1–6) maps to a 3×3 grid: true = pip present
+type PipGrid = boolean[][]
+
+const PIP_GRIDS: Record<number, PipGrid> = {
+  1: [[false,false,false],[false,true,false],[false,false,false]],
+  2: [[false,false,true],[false,false,false],[true,false,false]],
+  3: [[false,false,true],[false,true,false],[true,false,false]],
+  4: [[true,false,true],[false,false,false],[true,false,true]],
+  5: [[true,false,true],[false,true,false],[true,false,true]],
+  6: [[true,false,true],[true,false,true],[true,false,true]],
+}
+
+// Standard die orientations: given a top face, valid (front, right) pairs
+const ORIENTATIONS_3D: Record<number, [number, number][]> = {
+  1: [[2,3],[3,5],[5,4],[4,2]],
+  2: [[1,3],[3,6],[6,4],[4,1]],
+  3: [[1,5],[5,6],[6,2],[2,1]],
+  4: [[1,2],[2,6],[6,5],[5,1]],
+  5: [[1,4],[4,6],[6,3],[3,1]],
+  6: [[2,4],[4,5],[5,3],[3,2]],
+}
+
+function get3DOrientation(top: number): { top: number; front: number; right: number } {
+  const pairs = ORIENTATIONS_3D[top] ?? [[2, 3]]
+  const [front, right] = pairs[Math.floor(Math.random() * pairs.length)]!
+  return { top, front, right }
+}
+
+function pipRow(grid: PipGrid, row: number): string {
+  return grid[row]!.map(p => p ? "●" : " ").join("   ")
+}
+
+function build3DDice(top: number, front: number, right: number): string[] {
+  const tGrid = PIP_GRIDS[top] ?? PIP_GRIDS[1]!
+  const fGrid = PIP_GRIDS[front] ?? PIP_GRIDS[1]!
+
+  const tRows = [0, 1, 2].map(r => pipRow(tGrid, r))
+  const fRows = [0, 1, 2].map(r => pipRow(fGrid, r))
+
+  return [
+    `         ╭─────────────╮`,
+    `        ╱   ${tRows[0]}   ╱│`,
+    `       ╱     ${tRows[1]}     ╱ │`,
+    `      ╱   ${tRows[2]}   ╱  │`,
+    `     ├─────────────┤   │`,
+    `     │   ${fRows[0]}   │   │`,
+    `     │             │  ╱`,
+    `     │   ${fRows[1]}   │ ╱`,
+    `     │             │╱`,
+    `     │   ${fRows[2]}   │`,
+    `     ╰─────────────╯`,
+  ]
+}
+
+// Animated 3D dice roll — writes frames in-place using ANSI escape codes
+async function animate3DDice(value: number): Promise<void> {
+  const FRAMES = 14
+  const lines = 13 // dice height + status line + blank
+  const orientation = get3DOrientation(value)
+
+  for (let frame = 0; frame < FRAMES; frame++) {
+    // Random face during spin
+    const randTop = Math.floor(Math.random() * 6) + 1
+    const o = get3DOrientation(randTop)
+    const dice = build3DDice(o.top, o.front, o.right)
+
+    // Clear previous frame (move cursor up)
+    if (frame > 0) {
+      process.stdout.write(`\x1b[${lines}A`)
+    }
+
+    // Render spinning frame
+    for (const line of dice) {
+      console.log(chalk.cyan(line))
+    }
+    console.log()
+    console.log(chalk.cyan.dim(`  🎲 掷骰子中...`))
+
+    // Decelerate: progressively slower intervals
+    const delay = 80 + frame * 25
+    await new Promise(r => setTimeout(r, delay))
+  }
+
+  // Final frame: clear and show result
+  process.stdout.write(`\x1b[${lines}A`)
+
+  const finalDice = build3DDice(orientation.top, orientation.front, orientation.right)
+  const color = value >= 5 ? chalk.bold.green : value >= 3 ? chalk.bold.yellow : chalk.bold.red
+
+  for (const line of finalDice) {
+    console.log(color(line))
+  }
+  console.log()
+  const ratio = value / 6
+  const tag = ratio >= 0.8 ? chalk.green(" ★ Critical!") : ratio <= 1/6 ? chalk.red(" ☠ Fumble!") : ""
+  console.log(`  🎲 ${color(`结果: ${value}`)}  ${chalk.gray("(d6)")}${tag}`)
+}
+
 // ── Main command ───────────────────────────────────────────────────────────
 export const diceCommand: CommandSetup = (program: Command) => {
   program
@@ -97,12 +196,13 @@ export const diceCommand: CommandSetup = (program: Command) => {
       (v) => parseInt(v, 10),
       6,
     )
+    .option("-t, --three-d", "show 3D animated dice roll  (d6 only)")
     .addOption(
       new Option("-o, --output <format>", "output format")
         .choices(["text", "json"] as const)
         .default("text"),
     )
-    .action((opts) => {
+    .action(async (opts) => {
       const count = Math.min(Math.max(opts.count, 1), 12)   // clamp 1–12
       const sides = Math.max(opts.sides, 2)
 
@@ -112,6 +212,23 @@ export const diceCommand: CommandSetup = (program: Command) => {
       if (opts.output === "json") {
         const sum = rolls.reduce((a, b) => a + b, 0)
         console.log(JSON.stringify({ sides, count, rolls, sum, min: Math.min(...rolls), max: Math.max(...rolls) }, null, 2))
+        return
+      }
+
+      // ── 3D mode ─────────────────────────────────────────────────────────
+      if (opts.threeD && sides === 6) {
+        for (const [i, v] of rolls.entries()) {
+          if (count > 1) {
+            console.log(chalk.gray(`\n  ── Die ${i + 1} of ${count} ──`))
+          }
+          console.log()
+          await animate3DDice(v)
+          console.log()
+        }
+        if (count > 1) {
+          console.log(statsLine(rolls, sides))
+          console.log()
+        }
         return
       }
 

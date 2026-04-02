@@ -13,9 +13,10 @@
 import React from "react"
 import { Box, Text } from "ink"
 import { RainbowText } from "./RainbowText.js"
+import { Dice3D } from "./Dice3D.js"
 
 export type Message = {
-  role: "user" | "assistant" | "system" | "rainbow"
+  role: "user" | "assistant" | "system" | "rainbow" | "dice3d"
   text: string
 }
 
@@ -48,6 +49,9 @@ export function MessageList({ messages }: Props) {
               <Text color="cyan" bold>🌈 </Text>
               <RainbowText text={msg.text} />
             </>
+          ) : msg.role === "dice3d" ? (
+            /* /dice3d — 3D animated dice roll */
+            <Dice3D value={parseInt(msg.text, 10) || 1} />
           ) : (
             /* system messages: command output, errors, info */
             <>

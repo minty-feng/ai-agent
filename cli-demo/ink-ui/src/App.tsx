@@ -47,6 +47,7 @@ const HELP_LINES = [
   "/model <name>           — switch model  (claude-3-5-sonnet | gpt-4o | gemini-1.5-pro)",
   "/tokens                 — show total token estimate",
   "/dice [N]               — roll an N-sided die  (default: d6)",
+  "/dice3d                 — roll a 3D animated die  🎲",
   "/rainbow <text>         — display text in rainbow colors",
   "/exit  or Ctrl-C        — quit",
 ]
@@ -70,6 +71,7 @@ type SlashResult =
   | { kind: "clear" }
   | { kind: "model"; name: string }
   | { kind: "rainbow"; text: string }
+  | { kind: "dice3d"; value: number }
   | { kind: "unknown"; cmd: string }
 
 function handleSlash(input: string, currentModel: string): SlashResult {
@@ -113,6 +115,10 @@ function handleSlash(input: string, currentModel: string): SlashResult {
         kind: "message",
         text: `🎲 d${sides} → ${roll}${face}${tag}  (1–${sides})`,
       }
+    }
+    case "/dice3d": {
+      const roll3d = Math.floor(Math.random() * 6) + 1
+      return { kind: "dice3d", value: roll3d }
     }
     case "/rainbow": {
       const text = parts.slice(1).join(" ")
@@ -159,6 +165,9 @@ export function App() {
           return
         case "rainbow":
           setMessages((prev) => [...prev, { role: "rainbow", text: result.text }])
+          return
+        case "dice3d":
+          setMessages((prev) => [...prev, { role: "dice3d", text: String(result.value) }])
           return
         case "unknown":
           setMessages((prev) => [

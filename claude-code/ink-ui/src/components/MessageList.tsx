@@ -34,11 +34,15 @@ export const MessageList = React.memo(function MessageList({ messages }: Props) 
     return <Text dimColor>No messages yet — type something below, or /help for commands.</Text>
   }
 
-  // Only the last dice3d message renders as the live animated component.
-  // Previous dice results are shown as compact static text so Ink doesn't
-  // have to repaint 18 lines × N dice on every animation frame.
+  // Only the last animated component of each type renders as live.
+  // Previous instances show a compact static state so Ink doesn't repaint
+  // their lines on every animation frame of the current active one.
   const lastDiceIdx = useMemo(
     () => messages.reduce((last, m, i) => (m.role === "dice3d" ? i : last), -1),
+    [messages],
+  )
+  const lastProgressIdx = useMemo(
+    () => messages.reduce((last, m, i) => (m.role === "progress" ? i : last), -1),
     [messages],
   )
 
@@ -83,8 +87,14 @@ export const MessageList = React.memo(function MessageList({ messages }: Props) 
             /* /timer <seconds> — countdown timer */
             <Timer seconds={parseInt(msg.text, 10) || 30} />
           ) : msg.role === "progress" ? (
-            /* /progress [label] — animated progress bar */
-            <ProgressBar label={msg.text} duration={5} />
+            /* /progress [label] — animated progress bar (live only for the latest) */
+            i === lastProgressIdx
+              ? <ProgressBar label={msg.text} duration={5} />
+              : (
+                <Text color="green" bold>
+                  ✅ {msg.text} [████████████████████████████████████████] 100%
+                </Text>
+              )
           ) : (
             /* system messages: command output, errors, info */
             <>

@@ -18,7 +18,7 @@
  *   Box                   — layout container
  */
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useRef } from "react"
 import { Box, Text } from "ink"
 
 // ── Pip layout definitions for d6 faces ─────────────────────────────────────
@@ -202,6 +202,11 @@ type Props = {
 
 export function Dice3D({ value, onComplete }: Props) {
   const finalOrientation = useMemo(() => getOrientation(value), [value])
+  // Stabilize callback ref to avoid re-triggering useEffect on every render
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  // Track whether onComplete has already been called to prevent repeated fires
+  const completedRef = useRef(false)
 
   const [state, setState] = useState<AnimState>({
     phase: "spinning",
@@ -235,11 +240,14 @@ export function Dice3D({ value, onComplete }: Props) {
       return () => clearTimeout(timer)
     }
 
-    if (state.phase === "settled" && onComplete) {
-      const timer = setTimeout(onComplete, 200)
-      return () => clearTimeout(timer)
+    if (state.phase === "settled" && !completedRef.current) {
+      completedRef.current = true
+      if (onCompleteRef.current) {
+        const timer = setTimeout(onCompleteRef.current, 200)
+        return () => clearTimeout(timer)
+      }
     }
-  }, [state.phase, state.frameIdx, finalOrientation, onComplete])
+  }, [state.phase, state.frameIdx, finalOrientation])
 
   const diceLines = buildDice3D(state.top, state.front, state.right)
   const isSpinning = state.phase === "spinning"

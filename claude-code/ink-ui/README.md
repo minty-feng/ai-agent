@@ -90,6 +90,45 @@ node dist/index.js           # 运行编译产物
 
 ---
 
+## 编译为独立可执行文件
+
+`yarn build`（即 `npx tsc`）将 TypeScript 编译为 JavaScript 到 `dist/` 目录。
+输出的 `dist/index.js` 是一个 Node.js 脚本，可以通过以下两种方式"安装"为可执行命令：
+
+### 方式一：npm link（开发环境推荐）
+
+```bash
+npm run build                 # 编译 TS → dist/
+npm link                      # 全局注册为 CLI 命令
+ink-ui                        # 直接运行！
+```
+
+### 方式二：全局安装
+
+```bash
+npm run build
+npm install -g .              # 全局安装到系统 PATH
+ink-ui --help                 # 可在任何目录下运行
+```
+
+### 方式三：打包为单文件可执行文件（无需安装 Node.js）
+
+如果需要分发给没有 Node.js 环境的用户，可以使用 [pkg](https://github.com/vercel/pkg) 或 Node.js 22+ 内置的 SEA (Single Executable Application)：
+
+```bash
+# 使用 pkg（需要先 npm install -g pkg）
+npm run build
+pkg dist/index.js --targets node18-linux-x64,node18-macos-x64,node18-win-x64
+
+# 使用 Node.js SEA（Node 22+）
+# 参见 https://nodejs.org/api/single-executable-applications.html
+```
+
+> **注意**: `yarn build` / `npm run build` 只执行 TypeScript 编译（`tsc`），
+> 不会自动生成二进制可执行文件。编译产物在 `dist/` 目录中，需要 Node.js 来运行。
+
+---
+
 ## 底层原理
 
 ### 1. Ink 的渲染模型：React → 终端

@@ -7,7 +7,7 @@
  *   • Box + Text with dynamic color based on remaining time
  */
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { Box, Text } from "ink"
 
 type Props = {
@@ -31,6 +31,9 @@ export function Timer({ seconds, onComplete }: Props) {
   const isCountdown = seconds > 0
   const [elapsed, setElapsed] = useState(0)
   const [done, setDone] = useState(false)
+  // Stabilize callback ref to avoid re-triggering useEffect on every render
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
   useEffect(() => {
     if (done) return
@@ -39,14 +42,14 @@ export function Timer({ seconds, onComplete }: Props) {
         const next = prev + 1
         if (isCountdown && next >= seconds) {
           setDone(true)
-          onComplete?.()
+          onCompleteRef.current?.()
           clearInterval(timer)
         }
         return next
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [done, seconds, isCountdown, onComplete])
+  }, [done, seconds, isCountdown])
 
   const display = isCountdown ? seconds - elapsed : elapsed
   const clockIdx = elapsed % CLOCK_FRAMES.length

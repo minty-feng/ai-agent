@@ -7,7 +7,7 @@
  *   • Color transitions based on completion percentage
  */
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { Box, Text, useStdout } from "ink"
 
 type Props = {
@@ -25,6 +25,9 @@ export function ProgressBar({ label, duration, onComplete }: Props) {
   const barWidth = Math.min(40, termWidth - 30)
 
   const [progress, setProgress] = useState(0)
+  // Stabilize callback ref to avoid re-triggering useEffect on every render
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
   useEffect(() => {
     const steps = 50
@@ -37,12 +40,12 @@ export function ProgressBar({ label, duration, onComplete }: Props) {
       setProgress(p)
       if (step >= steps) {
         clearInterval(timer)
-        onComplete?.()
+        onCompleteRef.current?.()
       }
     }, interval)
 
     return () => clearInterval(timer)
-  }, [duration, onComplete])
+  }, [duration])
 
   const filled = Math.round(progress * barWidth)
   const empty = barWidth - filled

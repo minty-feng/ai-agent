@@ -1,0 +1,176 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(180deg, #fff8fb 0%, #f7f9ff 100%);
+  color: #1f2937;
+}
+
+.hero {
+  padding: 40px 20px 24px;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+  font-size: clamp(24px, 4vw, 40px);
+  color: #be185d;
+}
+
+.hero p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 0 auto 40px;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: #ffffffcc;
+  backdrop-filter: blur(4px);
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 20px;
+}
+
+.sub {
+  margin: -4px 0 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.grid.two {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+label {
+  font-size: 14px;
+  color: #374151;
+  display: grid;
+  gap: 6px;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  background: #fff;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #fbcfe8;
+  border-color: #f472b6;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  background: #ec4899;
+  color: #fff;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.btn.primary {
+  background: #be185d;
+}
+
+.btn:hover {
+  opacity: 0.93;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.item-list li {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.item-title {
+  font-weight: 700;
+  color: #111827;
+}
+
+.item-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.item-link {
+  color: #be185d;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.item-link:hover {
+  text-decoration: underline;
+}
+
+.result-card article + article {
+  margin-top: 12px;
+}
+
+.empty {
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.hidden {
+  display: none;
+}
+
+.result-main {
+  border-radius: 12px;
+  border: 1px solid #fbcfe8;
+  background: #fff1f6;
+  padding: 12px;
+}
+
+.result-secondary {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.footer {
+  text-align: center;
+  color: #9ca3af;
+  padding: 10px 0 26px;
+}

@@ -35,3 +35,7 @@ Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry 
 ### [github-crawler](github-crawler/)
 
 GitHub Markdown Crawler — search GitHub repositories with four strategies (by name, stars, language, or topic) and download all Markdown files in one click. Python (FastAPI + httpx) backend with a vanilla HTML/CSS/JS frontend for configuring storage paths and triggering downloads.
+
+### [girlfriend-daily-reco](girlfriend-daily-reco/)
+
+轻量级中文网页应用，帮助女友每天解决“穿什么、吃什么”的选择困难：支持录入穿搭/菜品素材，结合天气、心情、场景与饮食偏好做推荐；内置当下流行单品购买建议与热门菜品推荐。

@@ -12,9 +12,11 @@
 
 import React from "react"
 import { Box, Text } from "ink"
+import { RainbowText } from "./RainbowText.js"
+import { Dice3D } from "./Dice3D.js"
 
 export type Message = {
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system" | "rainbow" | "dice3d"
   text: string
 }
 
@@ -24,7 +26,7 @@ type Props = {
 
 export function MessageList({ messages }: Props) {
   if (messages.length === 0) {
-    return <Text dimColor>No messages yet — type something below.</Text>
+    return <Text dimColor>No messages yet — type something below, or /help for commands.</Text>
   }
 
   return (
@@ -36,10 +38,25 @@ export function MessageList({ messages }: Props) {
               <Text color="cyan" bold>you›</Text>
               <Text>{msg.text}</Text>
             </>
-          ) : (
+          ) : msg.role === "assistant" ? (
             <>
               <Text color="magenta" bold>ai› </Text>
               <Text color="white">{msg.text}</Text>
+            </>
+          ) : msg.role === "rainbow" ? (
+            /* /rainbow <text> — each character gets its own hue */
+            <>
+              <Text color="cyan" bold>🌈 </Text>
+              <RainbowText text={msg.text} />
+            </>
+          ) : msg.role === "dice3d" ? (
+            /* /dice3d — 3D animated dice roll */
+            <Dice3D value={parseInt(msg.text, 10) || 1} />
+          ) : (
+            /* system messages: command output, errors, info */
+            <>
+              <Text color="yellow" bold>sys›</Text>
+              <Text color="yellow">{msg.text}</Text>
             </>
           )}
         </Box>

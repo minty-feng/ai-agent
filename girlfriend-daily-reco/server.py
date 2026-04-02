@@ -144,6 +144,15 @@ class HistoryInput(BaseModel):
     created_at: str = ""
 
 
+class SharePlanInput(BaseModel):
+    plan_label: str = Field(min_length=1)
+    condition: dict[str, Any] = Field(default_factory=dict)
+    top_outfits: list[dict[str, Any]] = Field(default_factory=list)
+    top_meals: list[dict[str, Any]] = Field(default_factory=list)
+    hot_meals: list[str] = Field(default_factory=list)
+    created_at: str = ""
+
+
 class EmailSendInput(BaseModel):
     to_email: str = Field(min_length=3)
     to_name: str = ""
@@ -233,6 +242,20 @@ def ensure_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS shared_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                share_token TEXT NOT NULL UNIQUE,
+                plan_label TEXT NOT NULL,
+                condition_json TEXT NOT NULL DEFAULT '{}',
+                outfits_json TEXT NOT NULL DEFAULT '[]',
+                meals_json TEXT NOT NULL DEFAULT '[]',
+                hot_meals_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
         outfit_count = conn.execute("SELECT COUNT(1) FROM outfits").fetchone()[0]
         meal_count = conn.execute("SELECT COUNT(1) FROM meals").fetchone()[0]
@@ -311,6 +334,19 @@ def row_to_history(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
+def row_to_shared_plan(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "share_token": row["share_token"],
+        "plan_label": row["plan_label"],
+        "condition": parse_json(row["condition_json"], {}),
+        "top_outfits": parse_json(row["outfits_json"], []),
+        "top_meals": parse_json(row["meals_json"], []),
+        "hot_meals": parse_json(row["hot_meals_json"], []),
+        "created_at": row["created_at"],
+    }
+
+
 def must_find_outfit(conn: sqlite3.Connection, outfit_id: int) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM outfits WHERE id = ?", (outfit_id,)).fetchone()
     if row is None:
@@ -322,6 +358,15 @@ def must_find_meal(conn: sqlite3.Connection, meal_id: int) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM meals WHERE id = ?", (meal_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="meal not found")
+    return row
+
+
+def must_find_shared_plan(conn: sqlite3.Connection, share_token: str) -> sqlite3.Row:
+    row = conn.execute(
+        "SELECT * FROM shared_plans WHERE share_token = ?", (share_token,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="shared plan not found")
     return row
 
 
@@ -541,6 +586,38 @@ def create_history(payload: HistoryInput) -> dict[str, Any]:
             "SELECT * FROM recommendation_history WHERE id = ?", (cur.lastrowid,)
         ).fetchone()
     return row_to_history(row)
+
+
+@app.post("/api/share")
+def create_share(payload: SharePlanInput) -> dict[str, Any]:
+    created_at_value = payload.created_at.strip() or datetime.now(timezone.utc).isoformat()
+    share_token = os.urandom(9).hex()
+    with db_connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO shared_plans
+            (share_token, plan_label, condition_json, outfits_json, meals_json, hot_meals_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                share_token,
+                payload.plan_label.strip(),
+                json.dumps(payload.condition, ensure_ascii=False),
+                json.dumps(payload.top_outfits, ensure_ascii=False),
+                json.dumps(payload.top_meals, ensure_ascii=False),
+                json.dumps(payload.hot_meals, ensure_ascii=False),
+                created_at_value,
+            ),
+        )
+        conn.commit()
+    return {"share_token": share_token}
+
+
+@app.get("/api/share/{share_token}")
+def get_share(share_token: str) -> dict[str, Any]:
+    with db_connect() as conn:
+        row = must_find_shared_plan(conn, share_token)
+    return row_to_shared_plan(row)
 
 
 @app.post("/api/email/send")

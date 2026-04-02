@@ -20,6 +20,10 @@
           </div>
         </div>
         <div class="topbar-actions">
+          <div class="topbar-status">
+            <span class="status-dot"></span>
+            Premium concierge demo
+          </div>
           <button class="btn ghost" type="button" data-open-recommendation disabled>
             打开推荐中心
           </button>
@@ -35,23 +39,87 @@
               通过更现代的工作台布局、可视化素材录入和高优先级推荐弹窗，快速生成今日计划、
               明日计划，并支持邮件、访问链接与高清图片导出。
             </p>
+            <div class="hero-badges">
+              <span class="hero-badge">Brand-led UI</span>
+              <span class="hero-badge">Elegant motion</span>
+              <span class="hero-badge">Share-ready output</span>
+            </div>
+            <div class="hero-actions">
+              <button class="btn primary" type="button" data-open-recommendation disabled>
+                预览推荐弹窗
+              </button>
+              <a class="hero-link" href="#studioSection">进入素材工作台</a>
+            </div>
+            <div class="hero-story-grid">
+              <article class="story-card">
+                <span class="story-index">01</span>
+                <div>
+                  <strong>Personal styling</strong>
+                  <p>让天气、心情与场景共同驱动穿搭与美食推荐。</p>
+                </div>
+              </article>
+              <article class="story-card">
+                <span class="story-index">02</span>
+                <div>
+                  <strong>Premium delivery</strong>
+                  <p>推荐结果不再埋在页面底部，而是升级成可展示、可分享的重点内容。</p>
+                </div>
+              </article>
+            </div>
           </div>
-          <div class="metric-grid">
-            <article class="metric-card">
-              <span class="metric-label">穿搭素材</span>
-              <strong id="outfitCount">0</strong>
-              <span class="metric-sub">已录入可推荐搭配</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-label">菜品素材</span>
-              <strong id="mealCount">0</strong>
-              <span class="metric-sub">可智能匹配偏好</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-label">推荐历史</span>
-              <strong id="historyCount">0</strong>
-              <span class="metric-sub">已自动沉淀计划记录</span>
-            </article>
+          <div class="hero-stage">
+            <div class="hero-art">
+              <div class="art-orb orb-one"></div>
+              <div class="art-orb orb-two"></div>
+              <div class="art-orb orb-three"></div>
+
+              <article class="art-card art-card-main">
+                <span class="art-chip">Today spotlight</span>
+                <h3>Date night recommendation</h3>
+                <p>柔和穿搭 + 清爽轻食 + 可一键发送的浪漫计划。</p>
+                <div class="art-tags">
+                  <span>Looks</span>
+                  <span>Meals</span>
+                  <span>Share</span>
+                </div>
+              </article>
+
+              <article class="art-card art-card-floating">
+                <span class="mini-card-label">Share output</span>
+                <strong>HD poster ready</strong>
+                <p>弹窗内直接生成高清图和访问链接。</p>
+              </article>
+
+              <article class="art-card art-card-glass">
+                <span class="mini-card-label">Mood engine</span>
+                <div class="glass-line">
+                  <span class="glass-dot"></span>
+                  天气、心情、场景、预算联动
+                </div>
+                <div class="glass-line">
+                  <span class="glass-dot"></span>
+                  更像真实产品的体验层次
+                </div>
+              </article>
+            </div>
+
+            <div class="metric-grid">
+              <article class="metric-card">
+                <span class="metric-label">穿搭素材</span>
+                <strong id="outfitCount">0</strong>
+                <span class="metric-sub">已录入可推荐搭配</span>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">菜品素材</span>
+                <strong id="mealCount">0</strong>
+                <span class="metric-sub">可智能匹配偏好</span>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">推荐历史</span>
+                <strong id="historyCount">0</strong>
+                <span class="metric-sub">已自动沉淀计划记录</span>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -134,7 +202,7 @@
               </div>
             </section>
 
-            <section class="panel studio-panel">
+            <section id="studioSection" class="panel studio-panel">
               <div class="section-heading">
                 <div>
                   <p class="eyebrow">Material studio</p>
@@ -425,8 +493,23 @@
               </div>
 
               <div id="resultEmpty" class="empty result-empty">
-                <strong>推荐结果会出现在这里。</strong>
-                <span>生成后将自动打开现代化弹窗，并保留在右侧总览卡片中方便再次查看。</span>
+                <div class="empty-visual">
+                  <span class="empty-orbit orbit-a"></span>
+                  <span class="empty-orbit orbit-b"></span>
+                  <span class="empty-core"></span>
+                </div>
+                <div class="empty-content">
+                  <strong>推荐结果会出现在这里。</strong>
+                  <p>
+                    生成后将自动打开现代化弹窗，并保留在右侧总览卡片中，方便再次查看、
+                    发邮件、生成访问链接或导出高清图片。
+                  </p>
+                  <div class="empty-checklist">
+                    <span>选择天气 / 心情 / 预算</span>
+                    <span>录入穿搭与菜品素材</span>
+                    <span>一键生成高级推荐稿</span>
+                  </div>
+                </div>
               </div>
 
               <div id="resultWrap" class="result-preview hidden">

@@ -139,6 +139,55 @@ function handleSlash(input: string, currentModel: string): SlashResult {
       if (!text) return { kind: "message", text: "Usage: /rainbow <text>" }
       return { kind: "rainbow", text }
     }
+    case "/timer": {
+      const secs = parts[1] ? parseInt(parts[1], 10) : 0
+      if (isNaN(secs) || secs < 1 || secs > 3600) {
+        return { kind: "message", text: "Usage: /timer <seconds>  (1–3600)" }
+      }
+      return { kind: "timer", seconds: secs }
+    }
+    case "/calc": {
+      const expr = parts.slice(1).join(" ")
+      if (!expr) return { kind: "message", text: "Usage: /calc <expression>  e.g. /calc 2+3*4" }
+      try {
+        // Safe math evaluation: only allow digits, operators, parens, dots, spaces
+        if (!/^[\d+\-*/().%^ \t]+$/.test(expr)) {
+          return { kind: "message", text: `🧮 Invalid expression: only numbers and +-*/()%^ allowed` }
+        }
+        // Replace ^ with ** for exponentiation
+        const sanitized = expr.replace(/\^/g, "**")
+        const result = new Function(`"use strict"; return (${sanitized})`)()
+        return { kind: "message", text: `🧮 ${expr} = ${result}` }
+      } catch {
+        return { kind: "message", text: `🧮 Error evaluating: ${expr}` }
+      }
+    }
+    case "/uuid": {
+      const uuid = crypto.randomUUID()
+      return { kind: "message", text: `🔑 ${uuid}` }
+    }
+    case "/base64": {
+      const action = parts[1]?.toLowerCase()
+      const payload = parts.slice(2).join(" ")
+      if (!action || !payload || !["encode", "decode", "e", "d"].includes(action)) {
+        return { kind: "message", text: "Usage: /base64 <encode|decode> <text>\n       /base64 e hello world\n       /base64 d aGVsbG8gd29ybGQ=" }
+      }
+      try {
+        if (action === "encode" || action === "e") {
+          const encoded = Buffer.from(payload, "utf-8").toString("base64")
+          return { kind: "message", text: `📦 Encoded:\n${encoded}` }
+        } else {
+          const decoded = Buffer.from(payload, "base64").toString("utf-8")
+          return { kind: "message", text: `📦 Decoded:\n${decoded}` }
+        }
+      } catch {
+        return { kind: "message", text: `📦 Base64 error: invalid input` }
+      }
+    }
+    case "/progress": {
+      const label = parts.slice(1).join(" ") || "Processing task"
+      return { kind: "progress", label }
+    }
     default:
       return { kind: "unknown", cmd }
   }
@@ -182,6 +231,12 @@ export function App() {
           return
         case "dice3d":
           setMessages((prev) => [...prev, { role: "dice3d", text: String(result.value) }])
+          return
+        case "timer":
+          setMessages((prev) => [...prev, { role: "timer", text: String(result.seconds) }])
+          return
+        case "progress":
+          setMessages((prev) => [...prev, { role: "progress", text: result.label }])
           return
         case "unknown":
           setMessages((prev) => [

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>女友每日穿搭与美食推荐</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <header class="hero">
@@ -15,6 +15,9 @@
     <main class="container">
       <section class="card">
         <h2>1) 今日条件</h2>
+        <div id="backendStatus" class="tip neutral">
+          数据存储：正在连接 Python + SQLite 后端...
+        </div>
         <div id="weatherStatus" class="tip">
           天气助手：可点击“自动识别天气”，会根据你当前位置设置天气条件。
         </div>
@@ -236,6 +239,6 @@
     </main>
 
     <footer class="footer">Made with love · 每天少纠结，多开心</footer>
-    <script src="./app.js"></script>
+    <script src="/static/app.js"></script>
   </body>
   </html>

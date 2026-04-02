@@ -1,99 +1,3 @@
-const DEFAULT_OUTFITS = [
-  {
-    name: "奶油白针织开衫 + A字半身裙",
-    style: "温柔约会风",
-    weather: ["cloudy", "cold", "sunny"],
-    moods: ["happy", "romantic", "calm"],
-    occasions: ["date", "casual"],
-    budget: "mid",
-    link: "https://www.taobao.com/",
-  },
-  {
-    name: "浅灰西装外套 + 直筒牛仔裤",
-    style: "通勤韩系",
-    weather: ["sunny", "cloudy", "cold"],
-    moods: ["focused", "calm"],
-    occasions: ["work", "casual"],
-    budget: "budget",
-    link: "https://www.tmall.com/",
-  },
-  {
-    name: "薄款防晒衬衫 + 阔腿裤",
-    style: "轻松清爽",
-    weather: ["hot", "sunny"],
-    moods: ["happy", "calm"],
-    occasions: ["work", "casual", "home"],
-    budget: "budget",
-    link: "https://www.jd.com/",
-  },
-  {
-    name: "短款风衣 + 连衣裙",
-    style: "气质通勤",
-    weather: ["rainy", "cloudy", "cold"],
-    moods: ["focused", "romantic"],
-    occasions: ["work", "date"],
-    budget: "mid",
-    link: "https://www.taobao.com/",
-  },
-  {
-    name: "软糯家居套装",
-    style: "宅家治愈",
-    weather: ["rainy", "cold", "hot"],
-    moods: ["tired", "calm"],
-    occasions: ["home"],
-    budget: "budget",
-    link: "https://www.xiaohongshu.com/",
-  },
-];
-
-const DEFAULT_MEALS = [
-  {
-    name: "番茄肥牛乌冬",
-    flavor: "酸甜浓郁",
-    weather: ["rainy", "cold", "cloudy"],
-    moods: ["tired", "happy"],
-    diets: ["comfort", "protein"],
-    budget: "mid",
-    link: "https://www.dianping.com/",
-  },
-  {
-    name: "清炒虾仁时蔬 + 杂粮饭",
-    flavor: "清淡鲜甜",
-    weather: ["sunny", "hot", "cloudy"],
-    moods: ["focused", "calm"],
-    diets: ["light", "protein"],
-    budget: "mid",
-    link: "https://www.meituan.com/",
-  },
-  {
-    name: "麻辣香锅（少油版）",
-    flavor: "麻辣上头",
-    weather: ["rainy", "cold"],
-    moods: ["happy", "tired"],
-    diets: ["spicy", "comfort"],
-    budget: "budget",
-    link: "https://www.meituan.com/",
-  },
-  {
-    name: "三文鱼牛油果波奇饭",
-    flavor: "清爽轻食",
-    weather: ["hot", "sunny"],
-    moods: ["calm", "focused"],
-    diets: ["light", "protein"],
-    budget: "mid",
-    link: "https://www.ele.me/",
-  },
-  {
-    name: "菌菇鸡汤面",
-    flavor: "暖胃鲜香",
-    weather: ["cold", "rainy", "cloudy"],
-    moods: ["tired", "romantic", "calm"],
-    diets: ["comfort"],
-    budget: "budget",
-    link: "https://www.dianping.com/",
-  },
-];
-
 const TREND_ITEMS = [
   {
     name: "薄款西装外套（廓形）",
@@ -131,6 +35,7 @@ const HOT_MEAL_SUGGESTIONS = [
 ];
 
 const $ = (id) => document.getElementById(id);
+const API_BASE = "/api";
 const BUDGET_LABELS = { all: "不限", budget: "平价", mid: "中档" };
 const WEATHER_LABELS = {
   sunny: "晴天",
@@ -155,16 +60,38 @@ const appState = {
   latestPlan: null,
 };
 
-function loadData() {
-  const savedOutfits = localStorage.getItem("gf_outfits");
-  const savedMeals = localStorage.getItem("gf_meals");
-  store.outfits = savedOutfits ? JSON.parse(savedOutfits) : [...DEFAULT_OUTFITS];
-  store.meals = savedMeals ? JSON.parse(savedMeals) : [...DEFAULT_MEALS];
+function updateBackendStatus(text, type) {
+  const node = $("backendStatus");
+  node.textContent = text;
+  node.classList.remove("ok", "error", "neutral");
+  if (type === "ok") node.classList.add("ok");
+  else if (type === "error") node.classList.add("error");
+  else node.classList.add("neutral");
 }
 
-function persistData() {
-  localStorage.setItem("gf_outfits", JSON.stringify(store.outfits));
-  localStorage.setItem("gf_meals", JSON.stringify(store.meals));
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function loadData() {
+  try {
+    const [outfits, meals] = await Promise.all([apiRequest("/outfits"), apiRequest("/meals")]);
+    store.outfits = outfits;
+    store.meals = meals;
+    updateBackendStatus("数据存储：Python + SQLite 已连接", "ok");
+  } catch (error) {
+    store.outfits = [];
+    store.meals = [];
+    updateBackendStatus("后端连接失败，请先启动 Python 服务。", "error");
+  }
+  renderDataLists();
 }
 
 function parseTags(input) {
@@ -626,7 +553,7 @@ function bindEvents() {
   $("copyTextBtn").addEventListener("click", copyPlanText);
   $("sendEmailBtn").addEventListener("click", sendPlanEmail);
 
-  $("outfitForm").addEventListener("submit", (e) => {
+  $("outfitForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const newItem = {
       name: $("outfitName").value.trim(),
@@ -638,13 +565,21 @@ function bindEvents() {
       link: $("outfitLink").value.trim(),
     };
     if (!newItem.name) return;
-    store.outfits.unshift(newItem);
-    persistData();
-    renderDataLists();
-    e.target.reset();
+    try {
+      const created = await apiRequest("/outfits", {
+        method: "POST",
+        body: JSON.stringify(newItem),
+      });
+      store.outfits.unshift(created);
+      renderDataLists();
+      e.target.reset();
+      updateBackendStatus("穿搭素材已保存到 SQLite。", "ok");
+    } catch (error) {
+      updateBackendStatus("保存穿搭失败，请检查后端是否运行。", "error");
+    }
   });
 
-  $("mealForm").addEventListener("submit", (e) => {
+  $("mealForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const newItem = {
       name: $("mealName").value.trim(),
@@ -656,17 +591,24 @@ function bindEvents() {
       link: $("mealLink").value.trim(),
     };
     if (!newItem.name) return;
-    store.meals.unshift(newItem);
-    persistData();
-    renderDataLists();
-    e.target.reset();
+    try {
+      const created = await apiRequest("/meals", {
+        method: "POST",
+        body: JSON.stringify(newItem),
+      });
+      store.meals.unshift(created);
+      renderDataLists();
+      e.target.reset();
+      updateBackendStatus("菜品素材已保存到 SQLite。", "ok");
+    } catch (error) {
+      updateBackendStatus("保存菜品失败，请检查后端是否运行。", "error");
+    }
   });
 }
 
-function init() {
-  loadData();
-  renderDataLists();
+async function init() {
   bindEvents();
+  await loadData();
   updateEmailStatus("提示：先生成推荐，再导出或发送邮件。", undefined);
 }
 

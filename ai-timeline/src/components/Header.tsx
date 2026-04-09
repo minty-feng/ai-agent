@@ -1,5 +1,15 @@
 'use client';
 
+// Pre-computed star positions to avoid server/client hydration mismatch
+// (Math.random() produces different values on server vs client)
+const STARS = Array.from({ length: 30 }, (_, i) => ({
+  width: ((i * 7 + 1) % 2) + 1 + 'px',
+  height: ((i * 11 + 1) % 2) + 1 + 'px',
+  top: ((i * 37 + 13) % 100) + '%',
+  left: ((i * 53 + 7) % 100) + '%',
+  opacity: (((i * 17 + 5) % 50) / 100 + 0.1),
+}));
+
 export default function Header() {
   return (
     <header className="relative w-full overflow-hidden">
@@ -14,17 +24,11 @@ export default function Header() {
 
       {/* Star dots decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(30)].map((_, i) => (
+        {STARS.map((star, i) => (
           <div
             key={i}
             className="absolute rounded-full bg-white"
-            style={{
-              width: Math.random() * 2 + 1 + 'px',
-              height: Math.random() * 2 + 1 + 'px',
-              top: Math.random() * 100 + '%',
-              left: Math.random() * 100 + '%',
-              opacity: Math.random() * 0.5 + 0.1,
-            }}
+            style={star}
           />
         ))}
       </div>

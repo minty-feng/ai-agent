@@ -1,8 +1,8 @@
 import { Nav } from '@/components/Nav';
 import Link from 'next/link';
 
-export default function ChallengeDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function ChallengeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <main className="min-h-screen bg-gray-50">
       <Nav />

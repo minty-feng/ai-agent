@@ -4,6 +4,10 @@ A collection of AI-assisted engineering projects spanning front-end applications
 
 ## Projects
 
+### [ai-timeline](ai-timeline/)
+
+Interactive AI development history timeline — from the Turing Test (1950) through GPT-3, ChatGPT, Claude, Gemini, Sora, DeepSeek R1, and the AI agent era (2025). Features a premium dark glassmorphism UI with 100+ milestones across 10 categories, searchable and filterable by category, impact level, and year range. Built with Next.js 14, React 18, TypeScript, and Tailwind CSS. Data-driven architecture makes it trivial to add new events.
+
 ### [seastar-future](seastar-future/)
 
 Standalone, header-only C++17 library that extracts the core **future / promise / .then()** continuation model from the [Seastar](https://seastar.io/) framework. Features industrial-grade optimizations including single-slot continuation (replacing `vector<function>`), move-only semantics, `noncopyable_function` with Small Buffer Optimization, and utility combinators (`do_with`, `repeat`, `parallel_for_each`, `when_all_succeed`). Zero external dependencies — drop the single header into any C++17 project.

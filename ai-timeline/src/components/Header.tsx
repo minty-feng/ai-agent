@@ -51,7 +51,7 @@ export default function Header() {
           The Complete History of Artificial Intelligence
         </p>
         <p className="text-slate-500 text-sm mb-10">
-          From Alan Turing's imitation game to autonomous AI agents — every milestone that
+          From Alan Turing&apos;s imitation game to autonomous AI agents — every milestone that
           shaped the future
         </p>
 

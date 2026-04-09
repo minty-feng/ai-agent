@@ -145,6 +145,28 @@ const RAW_EVENTS: AIEvent[] = [
   },
   // ─── 2024 ───────────────────────────────────────────────────────────────────
   {
+    id: 'mcp-2024',
+    year: 2024,
+    month: 11,
+    title: 'Model Context Protocol (MCP) — Universal AI Tool Standard',
+    organization: 'Anthropic',
+    category: 'AI Agent',
+    impact: 'High',
+    description:
+      'Anthropic introduced the Model Context Protocol (MCP) — an open standard that enables AI assistants to securely connect to external data sources, databases, APIs, and tools through a unified interface, dramatically expanding agent capabilities.',
+    details: [
+      'MCP defines a client-server protocol: AI hosts (Claude, IDEs) connect to MCP servers that expose resources and tools.',
+      'Replaces bespoke integrations: a single MCP server works with any compliant AI client without custom code.',
+      'Supports three primitives: Resources (data/files), Tools (callable functions), and Prompts (templated interactions).',
+      'Secure by design: explicit user consent, sandboxed server execution, and no ambient authority.',
+      'SDKs released for Python and TypeScript; community-built servers for GitHub, Slack, Postgres, filesystem, and more.',
+      'Adopted by Zed, Replit, Codeium, Sourcegraph, and other IDE/coding platforms within weeks.',
+      'Represents a turning point from siloed AI tools toward a composable, interoperable agent ecosystem.',
+    ],
+    tags: ['MCP', 'Model Context Protocol', 'Anthropic', 'AI Agent', 'Tool Use', 'Standard', '2024'],
+    highlight: true,
+  },
+  {
     id: 'openai-o3-2024',
     year: 2024,
     month: 12,
@@ -539,6 +561,50 @@ const RAW_EVENTS: AIEvent[] = [
     tags: ['Gemini Ultra', 'Google', 'MMLU', 'Multimodal', 'Frontier', '2024'],
   },
   // ─── 2023 ───────────────────────────────────────────────────────────────────
+  {
+    id: 'openbmb-2023',
+    year: 2023,
+    month: 9,
+    title: 'OpenBMB — Open-Source Chinese AI Ecosystem',
+    organization: 'Tsinghua University / ModelBest',
+    category: 'Open Source',
+    impact: 'High',
+    description:
+      'OpenBMB (Open Big Model Benchmark) emerged as a leading Chinese open-source AI research initiative, releasing models and frameworks including MiniCPM, ChatDev, AgentVerse, and ToolBench — advancing open agentic AI and skill/tool-use research.',
+    details: [
+      'MiniCPM: a 2B-parameter model matching 7B-scale performance — demonstrates extreme parameter efficiency.',
+      'ChatDev: a multi-agent software development framework where LLM agents collaborate as a virtual software company.',
+      'AgentVerse: a multi-agent simulation platform for building collaborative agent workflows.',
+      'ToolBench & ToolLLaMA: training LLMs to use 16,000+ real-world APIs as tools (skills) autonomously.',
+      'OpenClaw: OpenBMB\'s tool-use evaluation benchmark testing agent skill invocation across diverse tasks.',
+      'CPM-Bee: a 10B bilingual (Chinese-English) foundation model with permissive open license.',
+      'OpenBMB represents the Chinese research community\'s contribution to open-source frontier AI beyond closed labs.',
+    ],
+    tags: ['OpenBMB', 'OpenClaw', 'MiniCPM', 'ChatDev', 'AgentVerse', 'ToolBench', 'Open Source', 'China', 'Skill', '2023'],
+    highlight: false,
+  },
+  {
+    id: 'function-calling-skills-2023',
+    year: 2023,
+    month: 6,
+    title: 'Function Calling & Agent Skills — LLMs Learn to Use Tools',
+    organization: 'OpenAI',
+    category: 'AI Agent',
+    impact: 'High',
+    description:
+      'OpenAI introduced function calling in the GPT API — enabling LLMs to invoke structured external tools (skills) on demand, transforming language models from conversational assistants into programmable agents capable of real-world action.',
+    details: [
+      'Function calling allows models to output a structured JSON call to a developer-defined function/skill instead of plain text.',
+      'Models learn to decide when to call a skill vs. answer directly — a key reasoning capability for agents.',
+      'Skills range from web search, database queries, calculator, calendar access, to custom business APIs.',
+      'Became the foundation for all production AI agents: customer service bots, coding assistants, and automation workflows.',
+      'ReAct (Reason + Act) pattern: model reasons, selects a skill, observes the result, then reasons again.',
+      'Plugin ecosystem (ChatGPT Plugins) launched simultaneously — first mass-market skill marketplace.',
+      'Standardized skill/tool schemas evolved into OpenAI\'s tool-use API and later Anthropic\'s MCP standard.',
+    ],
+    tags: ['Function Calling', 'Skill', 'Tool Use', 'OpenAI', 'AI Agent', 'ReAct', 'Plugins', '2023'],
+    highlight: true,
+  },
   {
     id: 'mixtral-8x7b-2023',
     year: 2023,
@@ -1146,6 +1212,28 @@ const RAW_EVENTS: AIEvent[] = [
     tags: ['DALL-E', 'OpenAI', 'Image Generation', 'Text-to-Image', 'Zero-Shot', '2021'],
   },
   // ─── 2020 ───────────────────────────────────────────────────────────────────
+  {
+    id: 'rag-2020',
+    year: 2020,
+    month: 5,
+    title: 'RAG — Retrieval-Augmented Generation',
+    organization: 'Facebook AI Research',
+    category: 'Research',
+    impact: 'Revolutionary',
+    description:
+      'Facebook AI Research introduced Retrieval-Augmented Generation (RAG) — a paradigm where language models retrieve relevant documents from an external knowledge base before generating answers, dramatically reducing hallucination and enabling up-to-date, factual AI responses.',
+    details: [
+      'RAG combines a neural retriever (DPR — Dense Passage Retrieval) with a seq2seq generator (BART) end-to-end.',
+      'Retriever finds top-k relevant passages from Wikipedia; generator conditions on retrieved context to answer.',
+      'Solves the parametric memory problem: LLMs bake facts into weights, RAG reads from dynamic external knowledge.',
+      'Enables continuously updated knowledge without retraining — connect to live databases, docs, or search indexes.',
+      'Reduces hallucination by grounding generation in retrieved source documents.',
+      'RAG became the dominant architecture for enterprise AI: chatbots over internal docs, legal/medical Q&A, code search.',
+      'Evolved into advanced patterns: HyDE, RAPTOR, Agentic RAG, GraphRAG — still the foundation of knowledge-intensive AI (2025).',
+    ],
+    tags: ['RAG', 'Retrieval-Augmented Generation', 'Facebook AI', 'Dense Retrieval', 'Knowledge Base', 'Hallucination', '2020'],
+    highlight: true,
+  },
   {
     id: 'gpt-3-2020',
     year: 2020,

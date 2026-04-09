@@ -1,13 +1,15 @@
 'use client';
 
-// Pre-computed star positions to avoid server/client hydration mismatch
-// (Math.random() produces different values on server vs client)
+// Pre-computed star positions to avoid server/client hydration mismatch.
+// Math.random() produces different values on server vs client, so we use
+// deterministic LCG-style formulas with distinct multipliers per axis to
+// spread 30 stars pseudo-randomly across the header background.
 const STARS = Array.from({ length: 30 }, (_, i) => ({
-  width: ((i * 7 + 1) % 2) + 1 + 'px',
-  height: ((i * 11 + 1) % 2) + 1 + 'px',
-  top: ((i * 37 + 13) % 100) + '%',
-  left: ((i * 53 + 7) % 100) + '%',
-  opacity: (((i * 17 + 5) % 50) / 100 + 0.1),
+  width:   ((i * 7  + 1) % 2) + 1 + 'px',
+  height:  ((i * 11 + 1) % 2) + 1 + 'px',
+  top:     ((i * 37 + 13) % 100) + '%',
+  left:    ((i * 53 + 7)  % 100) + '%',
+  opacity: ((i * 17 + 5)  % 50)  / 100 + 0.1,
 }));
 
 export default function Header() {

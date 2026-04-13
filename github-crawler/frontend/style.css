@@ -335,6 +335,28 @@ select.input {
   white-space: nowrap;
 }
 
+.search-extra-row--multi {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.field-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-inline label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.search-extra-row--sort {
+  gap: 0.6rem;
+}
+
 .search-pagination-row {
   display: flex;
   gap: 1rem;

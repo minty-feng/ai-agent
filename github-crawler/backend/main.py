@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -33,9 +33,9 @@ if FRONTEND_DIR.is_dir():
 
 
 @app.get("/", include_in_schema=False)
-def root() -> FileResponse:
-    """Serve the frontend index page at the root URL."""
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+def root() -> RedirectResponse:
+    """Redirect root URL to the static frontend so CSS/JS assets resolve correctly."""
+    return RedirectResponse(url="/static/index.html")
 
 
 # ── Models ────────────────────────────────────────────────────────────────────
@@ -60,10 +60,15 @@ class SearchRequest(BaseModel):
 
     strategy: Strategy
     query: str
-    min_stars: int = 100
-    language: str = "Python"
+    min_stars: int = 0
+    language: str = ""
     per_page: int = 10
     page: int = 1
+    sort_by: str = "best-match"
+    sort_order: str = "desc"
+    min_forks: int = 0
+    created_after: str = ""
+    pushed_after: str = ""
 
 
 class FetchRequest(BaseModel):
@@ -137,11 +142,23 @@ async def search_repos(body: SearchRequest) -> dict[str, Any]:
         "per_page": body.per_page,
         "page": body.page,
         "token": cfg.github_token,
+        "sort_by": body.sort_by,
+        "sort_order": body.sort_order,
     }
     if body.strategy == Strategy.STARS:
         kwargs["min_stars"] = body.min_stars
     if body.strategy == Strategy.LANGUAGE:
         kwargs["language"] = body.language
+    if body.strategy == Strategy.ADVANCED:
+        kwargs["language"] = body.language
+        kwargs["min_stars"] = body.min_stars
+        kwargs["min_forks"] = body.min_forks
+        kwargs["created_after"] = body.created_after
+        kwargs["pushed_after"] = body.pushed_after
+    if body.strategy == Strategy.BY_ORG:
+        kwargs["min_forks"] = body.min_forks
+        kwargs["created_after"] = body.created_after
+        kwargs["pushed_after"] = body.pushed_after
 
     try:
         data = await fn(body.query, **kwargs)

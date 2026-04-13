@@ -119,6 +119,8 @@ def test_strategy_enum_values():
     assert Strategy.STARS.value == "stars"
     assert Strategy.LANGUAGE.value == "language"
     assert Strategy.TOPIC.value == "topic"
+    assert Strategy.ADVANCED.value == "advanced"
+    assert Strategy.BY_ORG.value == "by_org"
 
 
 def test_strategy_map_has_all_strategies():

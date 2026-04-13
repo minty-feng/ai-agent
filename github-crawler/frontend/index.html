@@ -143,6 +143,8 @@
               <option value="stars">⭐ 按 Star 数</option>
               <option value="language">💻 按编程语言</option>
               <option value="topic">🏷️ 按 Topic</option>
+              <option value="advanced">🔧 综合搜索</option>
+              <option value="by_org">🏢 按组织/用户</option>
             </select>
           </div>
           <div class="search-input-wrap">
@@ -163,6 +165,34 @@
         <div class="search-extra-row" id="languageGroup" style="display:none;">
           <label>编程语言</label>
           <input type="text" id="language" value="Python" class="input input-sm" />
+        </div>
+        <div class="search-extra-row search-extra-row--multi" id="advancedGroup" style="display:none;">
+          <div class="field-inline">
+            <label>最低 Fork 数</label>
+            <input type="number" id="minForks" value="0" min="0" class="input input-sm" />
+          </div>
+          <div class="field-inline">
+            <label>创建时间晚于</label>
+            <input type="date" id="createdAfter" class="input input-sm" />
+          </div>
+          <div class="field-inline">
+            <label>推送时间晚于</label>
+            <input type="date" id="pushedAfter" class="input input-sm" />
+          </div>
+        </div>
+        <!-- Sort row (always visible) -->
+        <div class="search-extra-row search-extra-row--sort" id="sortGroup">
+          <label>排序方式</label>
+          <select id="sortBy" class="input input-sm">
+            <option value="best-match">最佳匹配</option>
+            <option value="stars">⭐ Star 数</option>
+            <option value="forks">🍴 Fork 数</option>
+            <option value="updated">🕒 最近更新</option>
+          </select>
+          <select id="sortOrder" class="input input-sm">
+            <option value="desc">降序</option>
+            <option value="asc">升序</option>
+          </select>
         </div>
       </div>
 

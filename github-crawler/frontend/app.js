@@ -6,8 +6,14 @@ const strategySelect = document.getElementById("strategy");
 const queryInput = document.getElementById("query");
 const minStarsInput = document.getElementById("minStars");
 const languageInput = document.getElementById("language");
+const minForksInput = document.getElementById("minForks");
+const createdAfterInput = document.getElementById("createdAfter");
+const pushedAfterInput = document.getElementById("pushedAfter");
+const sortBySelect = document.getElementById("sortBy");
+const sortOrderSelect = document.getElementById("sortOrder");
 const starsGroup = document.getElementById("starsGroup");
 const languageGroup = document.getElementById("languageGroup");
+const advancedGroup = document.getElementById("advancedGroup");
 const searchBtn = document.getElementById("searchBtn");
 const resultsDiv = document.getElementById("results");
 const totalCountSpan = document.getElementById("totalCount");
@@ -73,10 +79,21 @@ storageRadios.forEach((radio) => {
 });
 
 // ── Strategy-dependent UI ───────────────────────────────────────────
+const QUERY_PLACEHOLDERS = {
+  repo_name: "输入仓库名关键词…",
+  stars: "输入搜索关键词…",
+  language: "输入搜索关键词…",
+  topic: "输入 Topic 名称（如 machine-learning）…",
+  advanced: "输入关键词（可选）…",
+  by_org: "输入组织或用户名（如 microsoft）…",
+};
+
 strategySelect.addEventListener("change", () => {
   const v = strategySelect.value;
-  starsGroup.style.display = v === "stars" ? "" : "none";
-  languageGroup.style.display = v === "language" ? "" : "none";
+  starsGroup.style.display = (v === "stars" || v === "advanced") ? "" : "none";
+  languageGroup.style.display = (v === "language" || v === "advanced") ? "" : "none";
+  advancedGroup.style.display = (v === "advanced" || v === "by_org") ? "" : "none";
+  queryInput.placeholder = QUERY_PLACEHOLDERS[v] || "输入搜索关键词…";
 });
 
 // ── Load config on start ────────────────────────────────────────────
@@ -151,13 +168,18 @@ async function doSearch(resetPage = true) {
   const payload = {
     strategy: strategySelect.value,
     query: queryInput.value.trim(),
-    min_stars: parseInt(minStarsInput.value, 10) || 100,
-    language: languageInput.value.trim() || "Python",
+    min_stars: parseInt(minStarsInput.value, 10) || 0,
+    language: languageInput.value.trim() || "",
+    min_forks: parseInt(minForksInput.value, 10) || 0,
+    created_after: createdAfterInput.value || "",
+    pushed_after: pushedAfterInput.value || "",
+    sort_by: sortBySelect.value,
+    sort_order: sortOrderSelect.value,
     per_page: parseInt(perPageSelect.value, 10) || 10,
     page: currentPage,
   };
 
-  if (!payload.query) {
+  if (!payload.query && payload.strategy !== "advanced") {
     queryInput.focus();
     return;
   }

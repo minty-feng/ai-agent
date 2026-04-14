@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
@@ -30,6 +31,26 @@ app.add_middleware(
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 if FRONTEND_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
+
+def _error_detail(exc: Exception) -> tuple[int, str]:
+    """Return (http_status, detail_string) for an exception.
+
+    For GitHub HTTP errors the response body often contains a human-readable
+    ``message`` field that is more useful than the generic httpx status line.
+    For all other exceptions we fall back to ``repr()`` so the detail is never
+    an empty string.
+    """
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        try:
+            body = exc.response.json()
+        msg = body.get("message", "") or str(exc)
+        except Exception:
+            msg = str(exc)
+        return status, msg or repr(exc)
+    detail = str(exc) or repr(exc)
+    return 502, detail
 
 
 @app.get("/", include_in_schema=False)
@@ -163,7 +184,8 @@ async def search_repos(body: SearchRequest) -> dict[str, Any]:
     try:
         data = await fn(body.query, **kwargs)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        status, detail = _error_detail(exc)
+        raise HTTPException(status_code=status, detail=detail)
 
     repos = []
     for item in data.get("items", []):
@@ -207,7 +229,8 @@ async def fetch_markdown(body: FetchRequest) -> dict[str, Any]:
             body.owner, body.repo, backend, token=cfg.github_token
         )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        status, detail = _error_detail(exc)
+        raise HTTPException(status_code=status, detail=detail)
 
     return {
         "owner": body.owner,

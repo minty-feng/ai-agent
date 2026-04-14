@@ -194,7 +194,7 @@ async function doSearch(resetPage = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) throw new Error(await resp.text());
+    if (!resp.ok) throw new Error(await extractErrorMessage(resp));
 
     const data = await resp.json();
     lastSearchTotal = data.total_count;
@@ -308,7 +308,7 @@ async function fetchMarkdown(owner, repo, btn) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ owner, repo }),
     });
-    if (!resp.ok) throw new Error(await resp.text());
+    if (!resp.ok) throw new Error(await extractErrorMessage(resp));
 
     const data = await resp.json();
     fetchOutput.textContent =
@@ -331,4 +331,14 @@ function escapeHtml(str) {
 
 function escapeAttr(str) {
   return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+async function extractErrorMessage(resp) {
+  const text = await resp.text();
+  try {
+    const body = JSON.parse(text);
+    return body.detail || body.message || text || `HTTP ${resp.status}`;
+  } catch {
+    return text || `HTTP ${resp.status}`;
+  }
 }

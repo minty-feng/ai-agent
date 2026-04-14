@@ -45,7 +45,7 @@ def _error_detail(exc: Exception) -> tuple[int, str]:
         status = exc.response.status_code
         try:
             body = exc.response.json()
-        msg = body.get("message", "") or str(exc)
+            msg = body.get("message", "") or str(exc)
         except Exception:
             msg = str(exc)
         return status, msg or repr(exc)

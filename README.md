@@ -44,6 +44,10 @@ Modern interactive terminal UI application built with React + Ink, inspired by c
 
 GitHub Markdown Crawler — search GitHub repositories with four strategies (by name, stars, language, or topic) and download all Markdown files in one click. Python (FastAPI + httpx) backend with a vanilla HTML/CSS/JS frontend for configuring storage paths and triggering downloads.
 
+### [dev-roadmap](dev-roadmap/)
+
+精准 · 全面 · 深刻的程序员技术栈全景指南。分别介绍**前端、后端、全栈、大模型应用开发**四类工程师应掌握的核心技术，按重要性 ⭐⭐⭐⭐⭐ → ⭐ 五档评级排序。覆盖从语言基础、框架工具、系统设计到专家级深度方向，含横向四角色技能对比矩阵。内容对齐真实工程实践与顶级大厂技术栈，配套可折叠分级展示，方便按需深入。
+
 ### [girlfriend-daily-reco](girlfriend-daily-reco/)
 
 Modern recommendation workspace for solving the daily "what to wear" and "what to eat" decision loop. Built with a Python 3.12 + SQLite backend and a polished browser UI, it supports creating, editing, and deleting outfit/meal assets, generating recommendations from weather, mood, occasion, diet, and budget, auto-detecting live weather from geolocation, producing next-day plans, exporting results, sending them by email (backend SMTP or mailto), generating shareable links, downloading high-resolution image cards, and storing recommendation history for later review.

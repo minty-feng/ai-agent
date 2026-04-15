@@ -8,6 +8,7 @@ export const en: Translations = {
   navHome: 'Home',
   navChapter: 'Chapters',
   readMore: 'Read More',
+  readLess: 'Collapse',
   backToHome: 'Back to Home',
   articles: 'Articles',
   noArticles: 'No articles yet — check back soon.',

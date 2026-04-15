@@ -24,6 +24,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>('zh');
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
     if (stored === 'zh' || stored === 'en') {
       setLocale(stored);

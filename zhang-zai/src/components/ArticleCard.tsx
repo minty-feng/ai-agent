@@ -63,7 +63,7 @@ export default function ArticleCard({ article, accentClass }: ArticleCardProps) 
           onClick={() => setExpanded((v) => !v)}
           className="text-xs text-slate-500 transition hover:text-slate-300"
         >
-          {expanded ? '↑ 收起' : `↓ ${t.readMore}`}
+          {expanded ? `↑ ${t.readLess}` : `↓ ${t.readMore}`}
         </button>
       </div>
     </article>

@@ -5,6 +5,7 @@ export const zh = {
   navHome: '首页',
   navChapter: '篇章',
   readMore: '阅读更多',
+  readLess: '收起',
   backToHome: '返回首页',
   articles: '文章',
   noArticles: '暂无文章，敬请期待。',

@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-ink-900: #0a0a0f;
+  --bg-ink-800: #12121a;
+  --gold: #fbbf24;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-ink-900);
+  color: #e2e8f0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-ink-900);
+}
+::-webkit-scrollbar-thumb {
+  background: #2d2d44;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24;
+}
+
+/* Ink glass card */
+.ink-glass {
+  background: rgba(18, 18, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(251, 191, 36, 0.08);
+}
+
+/* Large hero phrase */
+.hero-phrase {
+  font-family: "Noto Serif SC", "Noto Serif", ui-serif, Georgia, serif;
+  font-size: clamp(2.5rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Chapter phrase display */
+.chapter-phrase {
+  font-family: "Noto Serif SC", "Noto Serif", ui-serif, Georgia, serif;
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  line-height: 1;
+}
+
+/* Decorative divider */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #fbbf24, transparent);
+}

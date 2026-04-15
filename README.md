@@ -46,7 +46,11 @@ GitHub Markdown Crawler — search GitHub repositories with four strategies (by 
 
 ### [dev-roadmap](dev-roadmap/)
 
-精准 · 全面 · 深刻的程序员技术栈全景指南。分别介绍**前端、后端、全栈、大模型应用开发**四类工程师应掌握的核心技术，按重要性 ⭐⭐⭐⭐⭐ → ⭐ 五档评级排序。覆盖从语言基础、框架工具、系统设计到专家级深度方向，含横向四角色技能对比矩阵。内容对齐真实工程实践与顶级大厂技术栈，配套可折叠分级展示，方便按需深入。
+Precise, comprehensive, and in-depth panoramic guide to developer skill stacks. Covers the core technologies required by four engineering roles — **Front-End, Back-End, Full-Stack, and LLM Application Development** — ranked by importance across a five-tier rating system (⭐⭐⭐⭐⭐ → ⭐). Spans language fundamentals, frameworks, system design, and expert-level depth tracks, with a cross-role skill comparison matrix. Aligned to real-world engineering practice and top-tier tech stacks, with collapsible tiered display for easy exploration.
+
+### [zhang-zai](zhang-zai/)
+
+An elegant dark-themed web app showcasing Zhang Zai's (张载) four timeless Confucian mottos — *为天地立心，为生民立命，为往圣继绝学，为万世开太平* — displayed in large gold serif calligraphy. Each motto anchors one of four thematic chapters that collect and explain philosophical articles. Supports i18n (Chinese / English) with a localStorage-persisted language toggle. Built with Next.js 15, React 19, TypeScript, and Tailwind CSS.
 
 ### [girlfriend-daily-reco](girlfriend-daily-reco/)
 

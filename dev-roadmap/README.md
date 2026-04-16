@@ -36,6 +36,8 @@
 
 > 负责用户界面与交互体验，掌控浏览器端的一切。
 
+📄 **[前端工程师技能深度手册 →](frontend.md)**（HTML/CSS 底层原理、React 源码级掌握、性能工程、测试体系、职业成长路径）
+
 <details open>
 <summary><strong>⭐⭐⭐⭐⭐ &nbsp;基石 — 必须掌握</strong></summary>
 
@@ -124,6 +126,8 @@
 
 > 掌控服务端逻辑、数据存储与系统可靠性。
 
+📄 **[后端工程师技能深度手册 →](backend.md)**（CS 基础、Go/Java 深度、PostgreSQL 优化、分布式理论、可观测性、安全工程）
+
 <details open>
 <summary><strong>⭐⭐⭐⭐⭐ &nbsp;基石 — 必须掌握</strong></summary>
 
@@ -211,6 +215,8 @@
 
 > 贯通前后端，独立交付完整产品，横向覆盖广度。
 
+📄 **[全栈工程师技能深度手册 →](fullstack.md)**（Next.js App Router、tRPC/REST 设计、认证系统、实时功能、Docker 部署、安全加固清单）
+
 <details open>
 <summary><strong>⭐⭐⭐⭐⭐ &nbsp;基石 — 必须掌握</strong></summary>
 
@@ -296,6 +302,8 @@
 ## 🤖 大模型应用开发工程师
 
 > 基于 LLM 构建智能应用，掌控 AI 时代的产品力核心。
+
+📄 **[大模型应用工程师技能深度手册 →](llm-engineer.md)**（Prompt 工程、RAG 工业级实现、Agent 系统、FastAPI 服务化、模型微调、LLM 安全合规）
 
 <details open>
 <summary><strong>⭐⭐⭐⭐⭐ &nbsp;基石 — 必须掌握</strong></summary>

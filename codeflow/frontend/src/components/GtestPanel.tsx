@@ -72,8 +72,9 @@ export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
   if (!isBuild) {
     return (
       <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', marginTop: 40, padding: '0 16px' }}>
-        Select a <code style={{ color: 'var(--accent)' }}>CMakeLists.txt</code> or{' '}
-        <code style={{ color: 'var(--accent)' }}>BUILD</code> file to inspect GTest targets
+        Select a <code style={{ color: 'var(--accent)' }}>CMakeLists.txt</code>,{' '}
+        <code style={{ color: 'var(--accent)' }}>BUILD</code>, or{' '}
+        <code style={{ color: 'var(--accent)' }}>.bazel</code> file to inspect GTest targets
       </div>
     );
   }

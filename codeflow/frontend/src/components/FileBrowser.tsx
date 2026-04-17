@@ -308,7 +308,7 @@ function buildBreadcrumbs(owner: string, repo: string, currentPath: string) {
 
 export function isBuildFile(name: string): boolean {
   const lower = name.toLowerCase();
-  return lower === 'cmakelists.txt' || lower === 'build' || lower === 'build.bazel';
+  return lower === 'cmakelists.txt' || lower === 'build' || lower.endsWith('.bazel');
 }
 
 function fileIcon(ext: string): string {
@@ -316,7 +316,7 @@ function fileIcon(ext: string): string {
     ts: '🔷', tsx: '⚛️', js: '📜', jsx: '⚛️', py: '🐍', go: '🐹',
     rs: '🦀', java: '☕', rb: '💎', php: '🐘', vue: '💚', svelte: '🧡',
     cs: '💜', cpp: '⚙️', cc: '⚙️', cxx: '⚙️', c: '⚙️', h: '📎', hpp: '📎',
-    cmake: '🔨',
+    cmake: '🔨', bazel: '🔨', bzl: '🔨',
   };
   if (ext === 'txt') return '📄'; // catches CMakeLists.txt — icon overridden below
   return icons[ext] ?? '📄';

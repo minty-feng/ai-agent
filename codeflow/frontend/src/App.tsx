@@ -45,6 +45,7 @@ export default function App() {
       <TopBar
         onAnalyze={handleAnalyze}
         onBrowse={handleBrowse}
+        onModeChange={setMode}
         loading={loading}
         mode={mode}
       />
@@ -107,7 +108,7 @@ export default function App() {
         <RightPanel
           result={result}
           selectedNode={selectedNode}
-          repo={browseRepo || (result ? extractRepoFromResult() : '')}
+          repo={browseRepo}
           token={browser.token || undefined}
           selectedFile={mode === 'browse' ? browser.selectedFile : null}
         />
@@ -167,9 +168,4 @@ function BrowseEmptyState({ hasBrowser, selectedFile }: { hasBrowser: boolean; s
       <div style={{ fontSize: 13 }}>Browse the tree on the left to select a file</div>
     </div>
   );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function extractRepoFromResult(): string {
-  return '';
 }

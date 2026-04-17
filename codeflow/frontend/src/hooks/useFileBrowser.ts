@@ -61,14 +61,9 @@ export function useFileBrowser(): FileBrowserState {
     async (path: string) => {
       setCurrentPath(path);
       setSelectedFile(null);
-      setTreeCache(prev => {
-        if (prev[path]) return prev; // already cached
-        return prev;
-      });
-      // Load lazily if not in cache
+      // Lazy-load only if not already cached
       setTreeCache(prev => {
         if (!prev[path]) {
-          // kick off load asynchronously
           loadPath(owner, repo, token, path);
         }
         return prev;

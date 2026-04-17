@@ -5,11 +5,12 @@ export type AppMode = 'analyze' | 'browse';
 interface TopBarProps {
   onAnalyze: (repo: string, token?: string) => void;
   onBrowse: (repo: string, token?: string) => void;
+  onModeChange: (mode: AppMode) => void;
   loading: boolean;
   mode: AppMode;
 }
 
-export function TopBar({ onAnalyze, onBrowse, loading, mode }: TopBarProps) {
+export function TopBar({ onAnalyze, onBrowse, onModeChange, loading, mode }: TopBarProps) {
   const [repo, setRepo] = useState('');
   const [token, setToken] = useState('');
   const [showToken, setShowToken] = useState(false);
@@ -55,7 +56,7 @@ export function TopBar({ onAnalyze, onBrowse, loading, mode }: TopBarProps) {
           <button
             key={m}
             type="button"
-            onClick={() => m === 'analyze' ? onAnalyze('', undefined) : onBrowse('', undefined)}
+            onClick={() => onModeChange(m)}
             style={{
               padding: '5px 14px',
               background: mode === m ? 'var(--accent-glow)' : 'none',

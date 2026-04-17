@@ -16,6 +16,7 @@ pub struct DirEntry {
 pub struct FileInfo {
     pub path: String,
     pub content: String,
+    #[allow(dead_code)]
     pub size: usize,
     pub language: String,
 }
@@ -23,6 +24,7 @@ pub struct FileInfo {
 #[derive(Deserialize)]
 struct TreeResponse {
     tree: Vec<TreeItem>,
+    #[allow(dead_code)]
     truncated: Option<bool>,
 }
 

@@ -3,8 +3,10 @@ use crate::github::FileInfo;
 
 #[derive(Debug, Clone)]
 pub struct Dependency {
+    #[allow(dead_code)]
     pub raw: String,
     pub resolved: Option<String>,
+    #[allow(dead_code)]
     pub is_external: bool,
 }
 
@@ -196,7 +198,7 @@ fn extract_rust_deps(content: &str, file_path: &str, all_paths: &[String]) -> Ve
     deps
 }
 
-fn extract_java_deps(content: &str, file_path: &str, all_paths: &[String]) -> Vec<Dependency> {
+fn extract_java_deps(content: &str, _file_path: &str, all_paths: &[String]) -> Vec<Dependency> {
     let pat = Regex::new(r#"(?m)^import\s+([\w\.]+);"#).unwrap();
     let mut deps = Vec::new();
     let mut seen = std::collections::HashSet::new();

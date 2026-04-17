@@ -345,7 +345,7 @@ pub async fn analyze_files(
 ) -> Result<Json<AnalysisResult>, (StatusCode, Json<ErrorResponse>)> {
     if req.files.is_empty() {
         return Err((
-            StatusCode::NOT_FOUND,
+            StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
                 error: "No files provided for analysis.".to_string(),
             }),

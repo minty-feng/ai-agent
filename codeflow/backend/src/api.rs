@@ -234,6 +234,87 @@ pub async fn get_build_deps(
     }))
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/local/tree
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct LocalTreeRequest {
+    pub path: String,
+}
+
+pub async fn local_tree(
+    Json(req): Json<LocalTreeRequest>,
+) -> Result<Json<crate::local::LocalTreeEntry>, (StatusCode, Json<ErrorResponse>)> {
+    let path = std::path::Path::new(&req.path);
+    crate::local::read_local_tree(path)
+        .map(Json)
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse { error: e.to_string() }),
+            )
+        })
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/local/analyze
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct LocalAnalyzeRequest {
+    /// Absolute path to the root directory of the local repository.
+    pub path: String,
+    /// Relative directory paths to include.  Empty = include everything.
+    pub include_paths: Vec<String>,
+    /// Relative paths (dirs or files) to always exclude.
+    pub exclude_paths: Vec<String>,
+    /// File extensions to exclude (without leading dot, e.g. "json").
+    pub exclude_extensions: Vec<String>,
+}
+
+pub async fn local_analyze(
+    Json(req): Json<LocalAnalyzeRequest>,
+) -> Result<Json<AnalysisResult>, (StatusCode, Json<ErrorResponse>)> {
+    let root = std::path::Path::new(&req.path);
+
+    if !root.exists() || !root.is_dir() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!(
+                    "Path '{}' is not a valid directory",
+                    req.path
+                ),
+            }),
+        ));
+    }
+
+    let files = crate::local::collect_local_files(
+        root,
+        &req.include_paths,
+        &req.exclude_paths,
+        &req.exclude_extensions,
+    );
+
+    if files.is_empty() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
+                error:
+                    "No supported source files found with the current selection."
+                        .to_string(),
+            }),
+        ));
+    }
+
+    // Cap to 300 files to keep analysis responsive.
+    let files: Vec<_> = files.into_iter().take(300).collect();
+
+    let result = crate::analyzer::analyze(files);
+    Ok(Json(result))
+}
+
 fn detect_language_simple(path: &str) -> String {
     match path.rsplit('.').next() {
         Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") => "cpp".to_string(),

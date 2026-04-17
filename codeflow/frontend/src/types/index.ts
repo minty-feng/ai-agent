@@ -94,8 +94,32 @@ export interface DirEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Build dependency types
+// Local repository types
 // ---------------------------------------------------------------------------
+
+export interface LocalTreeEntry {
+  name: string;
+  /** Relative path from root using '/' separators. Root entry has path "". */
+  path: string;
+  is_dir: boolean;
+  children: LocalTreeEntry[];
+  /** Number of analysable source files under this entry (recursive). */
+  file_count: number;
+  /** True when the backend recommends skipping this directory by default. */
+  suggested_skip: boolean;
+}
+
+export interface LocalAnalyzeRequest {
+  /** Absolute path to the root directory. */
+  path: string;
+  /** Relative dir paths to include.  Empty = include everything. */
+  include_paths: string[];
+  /** Relative paths (dirs or files) to always exclude. */
+  exclude_paths: string[];
+  /** File extensions without leading dot, e.g. "json". */
+  exclude_extensions: string[];
+}
+
 
 export interface SourceFileInfo {
   path: string;

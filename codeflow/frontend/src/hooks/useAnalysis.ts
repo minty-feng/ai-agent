@@ -7,12 +7,16 @@ export function useAnalysis() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [analyzedRepo, setAnalyzedRepo] = useState('');
+  const [analyzedToken, setAnalyzedToken] = useState<string | undefined>(undefined);
 
   const analyze = useCallback(async (repo: string, token?: string) => {
     setLoading(true);
     setError(null);
     setResult(null);
     setSelectedNode(null);
+    setAnalyzedRepo(repo);
+    setAnalyzedToken(token);
     try {
       const data = await analyzeRepo({ repo, token });
       setResult(data);
@@ -23,5 +27,5 @@ export function useAnalysis() {
     }
   }, []);
 
-  return { result, loading, error, selectedNode, setSelectedNode, analyze };
+  return { result, loading, error, selectedNode, setSelectedNode, analyze, analyzedRepo, analyzedToken };
 }

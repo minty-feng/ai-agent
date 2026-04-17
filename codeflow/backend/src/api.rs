@@ -330,6 +330,234 @@ fn detect_language_simple(path: &str) -> String {
 }
 
 // ---------------------------------------------------------------------------
+// POST /api/local/build-deps
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct LocalBuildDepsRequest {
+    /// Absolute path to the repository root.
+    pub root_path: String,
+    /// Relative path to the build file (e.g. "src/BUILD.bazel").
+    pub file_path: String,
+    /// Optional target name to filter sources.
+    pub target: Option<String>,
+}
+
+pub async fn local_build_deps(
+    Json(req): Json<LocalBuildDepsRequest>,
+) -> Result<Json<BuildDepsResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let root = std::path::Path::new(&req.root_path);
+    let full_path = root.join(&req.file_path);
+
+    let content = std::fs::read_to_string(&full_path).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Cannot read file '{}': {}", full_path.display(), e),
+            }),
+        )
+    })?;
+
+    let base_dir = req
+        .file_path
+        .rsplitn(2, '/')
+        .nth(1)
+        .unwrap_or("")
+        .to_string();
+
+    let file_name = req.file_path.split('/').last().unwrap_or("");
+    let parsed_targets = if file_name.to_lowercase() == "cmakelists.txt" {
+        crate::build_parser::parse_cmake(&content, &base_dir)
+    } else {
+        crate::build_parser::parse_bazel(&content, &base_dir)
+    };
+
+    let all_target_names: Vec<String> = parsed_targets.iter().map(|t| t.name.clone()).collect();
+    let test_target_names: Vec<String> = parsed_targets
+        .iter()
+        .filter(|t| t.is_test)
+        .map(|t| t.name.clone())
+        .collect();
+
+    let source_files: Vec<String> = if let Some(ref target_name) = req.target {
+        parsed_targets
+            .iter()
+            .filter(|t| &t.name == target_name)
+            .flat_map(|t| t.sources.clone())
+            .collect()
+    } else {
+        parsed_targets.into_iter().flat_map(|t| t.sources).collect()
+    };
+
+    let mut seen = std::collections::HashSet::new();
+    let source_files: Vec<String> = source_files
+        .into_iter()
+        .filter(|s| seen.insert(s.clone()))
+        .collect();
+
+    // For local files, read last-modified timestamp from filesystem
+    let mut files = Vec::new();
+    for path in source_files {
+        let full = root.join(&path);
+        let last_modified = std::fs::metadata(&full)
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .map(|t| {
+                let datetime: chrono::DateTime<chrono::Utc> = t.into();
+                datetime.to_rfc3339()
+            });
+        let language = detect_language_simple(&path);
+        files.push(SourceFileInfo {
+            path,
+            last_modified,
+            language,
+        });
+    }
+
+    files.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
+
+    Ok(Json(BuildDepsResponse {
+        targets: all_target_names,
+        test_targets: test_target_names,
+        files,
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/local/gtest-analyze
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct LocalGtestAnalyzeRequest {
+    /// Absolute path to the repository root.
+    pub root_path: String,
+    /// Relative path to the BUILD file.
+    pub build_file_path: String,
+    /// Name of the GTest target to analyze.
+    pub target: String,
+}
+
+pub async fn local_gtest_analyze(
+    Json(req): Json<LocalGtestAnalyzeRequest>,
+) -> Result<Json<GtestAnalyzeResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let root = std::path::Path::new(&req.root_path);
+    let full_path = root.join(&req.build_file_path);
+
+    let content = std::fs::read_to_string(&full_path).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: format!("Cannot read file '{}': {}", full_path.display(), e),
+            }),
+        )
+    })?;
+
+    let base_dir = req
+        .build_file_path
+        .rsplitn(2, '/')
+        .nth(1)
+        .unwrap_or("")
+        .to_string();
+
+    let file_name = req.build_file_path.split('/').last().unwrap_or("");
+    let parsed_targets = if file_name.to_lowercase() == "cmakelists.txt" {
+        crate::build_parser::parse_cmake(&content, &base_dir)
+    } else {
+        crate::build_parser::parse_bazel(&content, &base_dir)
+    };
+
+    let target = parsed_targets
+        .into_iter()
+        .find(|t| t.name == req.target)
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(ErrorResponse {
+                    error: format!("Target '{}' not found in build file", req.target),
+                }),
+            )
+        })?;
+
+    let mut seen = std::collections::HashSet::new();
+    let source_files: Vec<String> = target
+        .sources
+        .into_iter()
+        .filter(|s| seen.insert(s.clone()))
+        .collect();
+
+    let basename_to_path: std::collections::HashMap<String, String> = source_files
+        .iter()
+        .map(|p| {
+            let base = p.split('/').last().unwrap_or(p.as_str()).to_string();
+            (base, p.clone())
+        })
+        .collect();
+
+    let mut files: Vec<GtestFileAnalysis> = Vec::new();
+    for path in &source_files {
+        let full = root.join(path);
+        let language = detect_language_simple(path);
+
+        let file_content = std::fs::read_to_string(&full).unwrap_or_default();
+        let includes = crate::build_parser::parse_includes(&file_content);
+
+        // Get last modified time as a stand-in for commit info
+        let last_modified = std::fs::metadata(&full)
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .map(|t| {
+                let datetime: chrono::DateTime<chrono::Utc> = t.into();
+                datetime.to_rfc3339()
+            });
+
+        let commits = if let Some(date) = last_modified {
+            vec![CommitInfo {
+                sha: "(local)".to_string(),
+                message: "Last modified on disk".to_string(),
+                author: "local".to_string(),
+                date,
+            }]
+        } else {
+            vec![]
+        };
+
+        files.push(GtestFileAnalysis {
+            path: path.clone(),
+            language,
+            commits,
+            includes,
+        });
+    }
+
+    files.sort_by(|a, b| {
+        let a_date = a.commits.first().map(|c| c.date.as_str()).unwrap_or("");
+        let b_date = b.commits.first().map(|c| c.date.as_str()).unwrap_or("");
+        b_date.cmp(a_date)
+    });
+
+    let mut dep_edges: Vec<DepEdge> = Vec::new();
+    for file in &files {
+        for include in &file.includes {
+            let include_base = include.split('/').last().unwrap_or(include.as_str());
+            if let Some(target_path) = basename_to_path.get(include_base) {
+                if target_path != &file.path {
+                    dep_edges.push(DepEdge {
+                        from: file.path.clone(),
+                        to: target_path.clone(),
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(Json(GtestAnalyzeResponse {
+        target: req.target,
+        files,
+        dep_edges,
+    }))
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/gtest-analyze
 // ---------------------------------------------------------------------------
 

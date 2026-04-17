@@ -25,6 +25,8 @@ async fn main() {
         .route("/api/gtest-analyze", post(api::gtest_analyze))
         .route("/api/local/tree", post(api::local_tree))
         .route("/api/local/analyze", post(api::local_analyze))
+        .route("/api/local/build-deps", post(api::local_build_deps))
+        .route("/api/local/gtest-analyze", post(api::local_gtest_analyze))
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();

@@ -11,6 +11,8 @@ interface RightPanelProps {
   repo?: string;
   token?: string;
   selectedFile?: string | null;
+  // Local-mode props
+  localRootPath?: string;
 }
 
 type Tab = 'details' | 'security' | 'patterns' | 'builddeps' | 'gtest';
@@ -27,7 +29,7 @@ const SEV_BG: Record<string, string> = {
   low: 'rgba(136,136,170,0.08)',
 };
 
-export function RightPanel({ result, selectedNode, repo, token, selectedFile }: RightPanelProps) {
+export function RightPanel({ result, selectedNode, repo, token, selectedFile, localRootPath }: RightPanelProps) {
   const [tab, setTab] = useState<Tab>('details');
 
   const secCount = result?.security_issues.length ?? 0;
@@ -107,6 +109,7 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile }: 
             repo={repo ?? ''}
             token={token}
             filePath={activeBuildFile}
+            localRootPath={localRootPath}
           />
         )}
         {tab === 'gtest' && (
@@ -114,6 +117,7 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile }: 
             repo={repo ?? ''}
             token={token}
             filePath={activeBuildFile}
+            localRootPath={localRootPath}
           />
         )}
       </div>

@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import type { CommitInfo, DepEdge, GtestFileAnalysis } from '../types';
-import { fetchBuildDeps, fetchGtestAnalysis } from '../api';
+import { fetchBuildDeps, fetchGtestAnalysis, fetchLocalBuildDeps, fetchLocalGtestAnalysis } from '../api';
 import { isBuildFile } from './FileBrowser';
 
 interface GtestPanelProps {
   repo: string;
   token?: string;
   filePath: string | null;
+  localRootPath?: string;
 }
 
-export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
+export function GtestPanel({ repo, token, filePath, localRootPath }: GtestPanelProps) {
   const fileName = filePath ? filePath.split('/').pop() ?? '' : '';
   const isBuild = filePath !== null && isBuildFile(fileName);
 
@@ -25,7 +26,15 @@ export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
 
   // Load test targets when build file changes
   useEffect(() => {
-    if (!isBuild || !filePath || !repo) {
+    if (!isBuild || !filePath) {
+      setTestTargets([]);
+      setSelectedTarget('');
+      setFiles([]);
+      setDepEdges([]);
+      return;
+    }
+    // Need either a GitHub repo or a local root path
+    if (!repo && !localRootPath) {
       setTestTargets([]);
       setSelectedTarget('');
       setFiles([]);
@@ -38,7 +47,12 @@ export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
     setSelectedTarget('');
     setFiles([]);
     setDepEdges([]);
-    fetchBuildDeps({ repo, token, file_path: filePath })
+
+    const fetchData = localRootPath
+      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath })
+      : fetchBuildDeps({ repo, token, file_path: filePath });
+
+    fetchData
       .then(data => {
         setTargetsLoading(false);
         setTestTargets(data.test_targets);
@@ -47,7 +61,7 @@ export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
         setTargetsLoading(false);
         setTargetsError(e instanceof Error ? e.message : String(e));
       });
-  }, [filePath, repo, token, isBuild]);
+  }, [filePath, repo, token, isBuild, localRootPath]);
 
   // Run GTest analysis when target is selected
   const handleSelectTarget = (target: string) => {
@@ -55,9 +69,15 @@ export function GtestPanel({ repo, token, filePath }: GtestPanelProps) {
     setFiles([]);
     setDepEdges([]);
     setAnalysisError(null);
-    if (!target || !filePath || !repo) return;
+    if (!target || !filePath) return;
+    if (!repo && !localRootPath) return;
     setAnalysisLoading(true);
-    fetchGtestAnalysis({ repo, token, build_file_path: filePath, target })
+
+    const fetchData = localRootPath
+      ? fetchLocalGtestAnalysis({ root_path: localRootPath, build_file_path: filePath, target })
+      : fetchGtestAnalysis({ repo, token, build_file_path: filePath, target });
+
+    fetchData
       .then(data => {
         setAnalysisLoading(false);
         setFiles(data.files);

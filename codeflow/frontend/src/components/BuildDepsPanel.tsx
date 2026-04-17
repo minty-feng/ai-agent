@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import type { SourceFileInfo } from '../types';
-import { fetchBuildDeps } from '../api';
+import { fetchBuildDeps, fetchLocalBuildDeps } from '../api';
 import { isBuildFile } from './FileBrowser';
 
 interface BuildDepsPanelProps {
   repo: string;
   token?: string;
   filePath: string | null;
+  localRootPath?: string;
 }
 
 const LANG_ICON: Record<string, string> = {
@@ -16,7 +17,7 @@ const LANG_ICON: Record<string, string> = {
   unknown: '📄',
 };
 
-export function BuildDepsPanel({ repo, token, filePath }: BuildDepsPanelProps) {
+export function BuildDepsPanel({ repo, token, filePath, localRootPath }: BuildDepsPanelProps) {
   const [state, setState] = useState<{
     targets: string[];
     files: SourceFileInfo[];
@@ -36,9 +37,16 @@ export function BuildDepsPanel({ repo, token, filePath }: BuildDepsPanelProps) {
 
   // Reset when file changes
   useEffect(() => {
-    if (!isBuild || !filePath || !repo) return;
+    if (!isBuild || !filePath) return;
+    // Need either a GitHub repo or a local root path
+    if (!repo && !localRootPath) return;
     setState(s => ({ ...s, loading: true, error: null, targets: [], files: [], selectedTarget: '' }));
-    fetchBuildDeps({ repo, token, file_path: filePath })
+
+    const fetchData = localRootPath
+      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath })
+      : fetchBuildDeps({ repo, token, file_path: filePath });
+
+    fetchData
       .then(data => setState(s => ({
         ...s,
         loading: false,
@@ -51,13 +59,19 @@ export function BuildDepsPanel({ repo, token, filePath }: BuildDepsPanelProps) {
         loading: false,
         error: e instanceof Error ? e.message : String(e),
       })));
-  }, [filePath, repo, token, isBuild]);
+  }, [filePath, repo, token, isBuild, localRootPath]);
 
   // Re-fetch when target changes
   const handleTargetChange = (target: string) => {
-    if (!filePath || !repo) return;
+    if (!filePath) return;
+    if (!repo && !localRootPath) return;
     setState(s => ({ ...s, selectedTarget: target, loading: true, error: null, files: [] }));
-    fetchBuildDeps({ repo, token, file_path: filePath, target: target || undefined })
+
+    const fetchData = localRootPath
+      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath, target: target || undefined })
+      : fetchBuildDeps({ repo, token, file_path: filePath, target: target || undefined });
+
+    fetchData
       .then(data => setState(s => ({
         ...s,
         loading: false,

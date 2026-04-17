@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { LocalTreeEntry } from '../types';
+import { isBuildFile } from './FileBrowser';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -20,6 +21,8 @@ interface LocalRepoBrowserProps {
   onAddExcludeExt: (ext: string) => void;
   onRemoveExcludeExt: (ext: string) => void;
   onAnalyze: () => void;
+  onSelectBuildFile?: (path: string | null) => void;
+  selectedBuildFile?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +44,8 @@ export function LocalRepoBrowser({
   onAddExcludeExt,
   onRemoveExcludeExt,
   onAnalyze,
+  onSelectBuildFile,
+  selectedBuildFile,
 }: LocalRepoBrowserProps) {
   const [showExclusions, setShowExclusions] = useState(true);
   const [newExcludePath, setNewExcludePath] = useState('');
@@ -118,9 +123,11 @@ export function LocalRepoBrowser({
                 checkedDirs={checkedDirs}
                 exclusions={exclusions}
                 onToggle={onToggleDir}
+                onSelectBuildFile={onSelectBuildFile}
+                selectedBuildFile={selectedBuildFile}
               />
             ) : (
-              <FileRow key={child.path} entry={child} depth={0} />
+              <FileRow key={child.path} entry={child} depth={0} onSelectBuildFile={onSelectBuildFile} selectedBuildFile={selectedBuildFile} />
             ),
           )
         )}
@@ -276,6 +283,8 @@ interface DirRowProps {
   checkedDirs: Set<string>;
   exclusions: { paths: string[]; extensions: string[] };
   onToggle: (path: string) => void;
+  onSelectBuildFile?: (path: string | null) => void;
+  selectedBuildFile?: string | null;
 }
 
 function isPathExcluded(path: string, excludePaths: string[]): boolean {
@@ -299,7 +308,7 @@ function getCheckState(
   return 'indeterminate';
 }
 
-function DirRow({ entry, depth, checkedDirs, exclusions, onToggle }: DirRowProps) {
+function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuildFile, selectedBuildFile }: DirRowProps) {
   const [expanded, setExpanded] = useState(depth === 0);
 
   const excluded = isPathExcluded(entry.path, exclusions.paths);
@@ -411,9 +420,11 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle }: DirRowProps
                 checkedDirs={checkedDirs}
                 exclusions={exclusions}
                 onToggle={onToggle}
+                onSelectBuildFile={onSelectBuildFile}
+                selectedBuildFile={selectedBuildFile}
               />
             ) : (
-              <FileRow key={child.path} entry={child} depth={depth + 1} />
+              <FileRow key={child.path} entry={child} depth={depth + 1} onSelectBuildFile={onSelectBuildFile} selectedBuildFile={selectedBuildFile} />
             ),
           )}
         </div>
@@ -436,17 +447,30 @@ function fileIcon(name: string): string {
   return '📄';
 }
 
-function FileRow({ entry, depth }: { entry: LocalTreeEntry; depth: number }) {
+function FileRow({ entry, depth, onSelectBuildFile, selectedBuildFile }: { entry: LocalTreeEntry; depth: number; onSelectBuildFile?: (path: string | null) => void; selectedBuildFile?: string | null }) {
+  const isBuild = isBuildFile(entry.name);
+  const isSelected = selectedBuildFile === entry.path;
+
+  const handleClick = () => {
+    if (isBuild && onSelectBuildFile) {
+      onSelectBuildFile(isSelected ? null : entry.path);
+    }
+  };
+
   return (
     <div
+      onClick={handleClick}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 4,
         padding: `2px 8px 2px ${8 + depth * 14 + 14 + 4}px`, // align with dir names (skip expand btn width)
+        cursor: isBuild ? 'pointer' : 'default',
+        background: isSelected ? 'var(--accent-glow)' : '',
+        borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
       }}
-      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)')}
-      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = '')}
+      onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
+      onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = ''; }}
     >
       <span style={{ fontSize: 11 }}>{fileIcon(entry.name)}</span>
       <span
@@ -456,13 +480,26 @@ function FileRow({ entry, depth }: { entry: LocalTreeEntry; depth: number }) {
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          color: 'var(--text-muted)',
+          color: isSelected ? 'var(--accent)' : isBuild ? 'var(--text-secondary)' : 'var(--text-muted)',
+          fontWeight: isBuild ? 600 : 400,
           userSelect: 'none',
         }}
         title={entry.path}
       >
         {entry.name}
       </span>
+      {isBuild && (
+        <span style={{
+          fontSize: 9,
+          color: isSelected ? 'var(--accent)' : 'var(--text-muted)',
+          background: isSelected ? 'var(--accent-glow)' : 'var(--bg-surface)',
+          padding: '1px 4px',
+          borderRadius: 4,
+          flexShrink: 0,
+        }}>
+          build
+        </span>
+      )}
     </div>
   );
 }

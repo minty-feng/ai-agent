@@ -128,8 +128,8 @@ export function LocalRepoBrowser({
             {rootPath}
           </div>
           <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 6 }}>
-            <MiniBtn onClick={expandAll} title="Expand all directories">▼ Expand</MiniBtn>
-            <MiniBtn onClick={collapseAll} title="Collapse all directories">▶ Collapse</MiniBtn>
+            <MiniBtn onClick={expandAll} title="Expand all directories">Expand All</MiniBtn>
+            <MiniBtn onClick={collapseAll} title="Collapse all directories">Collapse All</MiniBtn>
           </div>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>

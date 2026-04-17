@@ -113,8 +113,7 @@ export async function readFileFromHandle(
   relativePath: string,
 ): Promise<string> {
   const parts = relativePath.split('/').filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: any = rootHandle;
+  let current: FileSystemDirectoryHandle = rootHandle;
 
   // Navigate to the directory containing the file
   for (let i = 0; i < parts.length - 1; i++) {

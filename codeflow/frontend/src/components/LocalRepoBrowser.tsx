@@ -469,7 +469,7 @@ function FileRow({ entry, depth, onSelectBuildFile, selectedBuildFile }: { entry
         background: isSelected ? 'var(--accent-glow)' : '',
         borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
       }}
-      onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = isBuild ? 'var(--bg-hover)' : 'var(--bg-hover)'; }}
+      onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
       onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = ''; }}
     >
       <span style={{ fontSize: 11 }}>{fileIcon(entry.name)}</span>

@@ -1,7 +1,16 @@
 use anyhow::{anyhow, Result};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+/// A single entry in a repository directory listing.
+#[derive(Debug, Clone, Serialize)]
+pub struct DirEntry {
+    pub name: String,
+    pub path: String,
+    pub entry_type: String, // "file" | "dir"
+    pub size: Option<usize>,
+}
 
 #[derive(Debug, Clone)]
 pub struct FileInfo {
@@ -29,6 +38,32 @@ struct TreeItem {
 struct ContentResponse {
     content: Option<String>,
     encoding: Option<String>,
+}
+
+/// A single item returned by the GitHub Contents API (directory listing).
+#[derive(Deserialize)]
+struct ContentsItem {
+    name: String,
+    path: String,
+    #[serde(rename = "type")]
+    item_type: String, // "file", "dir", "symlink", "submodule"
+    size: Option<usize>,
+}
+
+/// Top-level item in a commits list response.
+#[derive(Deserialize)]
+struct CommitListItem {
+    commit: CommitData,
+}
+
+#[derive(Deserialize)]
+struct CommitData {
+    committer: CommitPersonData,
+}
+
+#[derive(Deserialize)]
+struct CommitPersonData {
+    date: String,
 }
 
 #[derive(Deserialize)]
@@ -75,6 +110,7 @@ fn should_skip(path: &str) -> bool {
     skip_dirs.iter().any(|d| path.contains(d))
 }
 
+#[derive(Clone)]
 pub struct GithubClient {
     client: Client,
     token: Option<String>,
@@ -169,6 +205,53 @@ impl GithubClient {
     }
 
     async fn fetch_file_content(&self, owner: &str, repo: &str, path: &str) -> Result<String> {
+        self.fetch_file_content_pub(owner, repo, path).await
+    }
+
+    /// Returns a shallow one-level directory listing using the GitHub Contents API.
+    pub async fn fetch_directory(&self, owner: &str, repo: &str, path: &str) -> Result<Vec<DirEntry>> {
+        let url = if path.is_empty() {
+            format!("https://api.github.com/repos/{}/{}/contents", owner, repo)
+        } else {
+            format!(
+                "https://api.github.com/repos/{}/{}/contents/{}",
+                owner, repo, path
+            )
+        };
+        let items: Vec<ContentsItem> = self.get_json(&url).await?;
+        let entries = items
+            .into_iter()
+            .map(|item| DirEntry {
+                name: item.name,
+                path: item.path,
+                entry_type: if item.item_type == "dir" {
+                    "dir".to_string()
+                } else {
+                    "file".to_string()
+                },
+                size: item.size,
+            })
+            .collect();
+        Ok(entries)
+    }
+
+    /// Returns the ISO-8601 date string of the most recent commit that touched `path`.
+    pub async fn fetch_last_commit_time(
+        &self,
+        owner: &str,
+        repo: &str,
+        path: &str,
+    ) -> Result<Option<String>> {
+        let url = format!(
+            "https://api.github.com/repos/{}/{}/commits?path={}&per_page=1",
+            owner, repo, path
+        );
+        let commits: Vec<CommitListItem> = self.get_json(&url).await?;
+        Ok(commits.into_iter().next().map(|c| c.commit.committer.date))
+    }
+
+    /// Public version so API handlers can call it directly.
+    pub async fn fetch_file_content_pub(&self, owner: &str, repo: &str, path: &str) -> Result<String> {
         let url = format!(
             "https://api.github.com/repos/{}/{}/contents/{}",
             owner, repo, path

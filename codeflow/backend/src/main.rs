@@ -3,6 +3,7 @@ use tower_http::cors::{CorsLayer, Any};
 
 mod api;
 mod analyzer;
+mod build_parser;
 mod github;
 
 #[tokio::main]
@@ -17,6 +18,9 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/api/analyze", post(api::analyze_repo))
+        .route("/api/tree/{owner}/{repo}", get(api::get_tree))
+        .route("/api/file/{owner}/{repo}", get(api::get_file))
+        .route("/api/build-deps", post(api::get_build_deps))
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();

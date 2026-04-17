@@ -81,3 +81,36 @@ export interface AnalysisResult {
   patterns: Pattern[];
   stats: Stats;
 }
+
+// ---------------------------------------------------------------------------
+// File browser types
+// ---------------------------------------------------------------------------
+
+export interface DirEntry {
+  name: string;
+  path: string;
+  entry_type: 'file' | 'dir';
+  size?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Build dependency types
+// ---------------------------------------------------------------------------
+
+export interface SourceFileInfo {
+  path: string;
+  last_modified: string | null;
+  language: string;
+}
+
+export interface BuildDepsResponse {
+  targets: string[];
+  files: SourceFileInfo[];
+}
+
+export interface BuildDepsRequest {
+  repo: string;
+  token?: string;
+  file_path: string;
+  target?: string;
+}

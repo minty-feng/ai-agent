@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 
+export type AppMode = 'analyze' | 'browse';
+
 interface TopBarProps {
   onAnalyze: (repo: string, token?: string) => void;
+  onBrowse: (repo: string, token?: string) => void;
   loading: boolean;
+  mode: AppMode;
 }
 
-export function TopBar({ onAnalyze, loading }: TopBarProps) {
+export function TopBar({ onAnalyze, onBrowse, loading, mode }: TopBarProps) {
   const [repo, setRepo] = useState('');
   const [token, setToken] = useState('');
   const [showToken, setShowToken] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (repo.trim()) onAnalyze(repo.trim(), token.trim() || undefined);
+    if (!repo.trim()) return;
+    if (mode === 'browse') {
+      onBrowse(repo.trim(), token.trim() || undefined);
+    } else {
+      onAnalyze(repo.trim(), token.trim() || undefined);
+    }
   };
 
   return (
@@ -38,6 +47,30 @@ export function TopBar({ onAnalyze, loading }: TopBarProps) {
         <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15, letterSpacing: 1 }}>
           CodeFlow
         </span>
+      </div>
+
+      {/* Mode tabs */}
+      <div style={{ display: 'flex', gap: 0, background: 'var(--bg-surface)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+        {(['analyze', 'browse'] as AppMode[]).map(m => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => m === 'analyze' ? onAnalyze('', undefined) : onBrowse('', undefined)}
+            style={{
+              padding: '5px 14px',
+              background: mode === m ? 'var(--accent-glow)' : 'none',
+              border: 'none',
+              borderBottom: mode === m ? '2px solid var(--accent)' : '2px solid transparent',
+              color: mode === m ? 'var(--accent)' : 'var(--text-secondary)',
+              fontSize: 11,
+              fontWeight: mode === m ? 700 : 400,
+              letterSpacing: 0.5,
+              transition: 'all 0.15s',
+            }}
+          >
+            {m === 'analyze' ? '⚡ Analyze' : '🗂 Browse'}
+          </button>
+        ))}
       </div>
 
       {/* Form */}
@@ -114,9 +147,9 @@ export function TopBar({ onAnalyze, loading }: TopBarProps) {
         >
           {loading ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Spinner /> Analyzing…
+              <Spinner /> {mode === 'browse' ? 'Loading…' : 'Analyzing…'}
             </span>
-          ) : '⚡ Analyze'}
+          ) : mode === 'browse' ? '🗂 Browse' : '⚡ Analyze'}
         </button>
       </form>
     </header>

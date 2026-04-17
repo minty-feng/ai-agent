@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import type { AnalysisResult, GraphNode } from '../types';
+import { BuildDepsPanel } from './BuildDepsPanel';
+import { isBuildFile } from './FileBrowser';
 
 interface RightPanelProps {
   result: AnalysisResult | null;
   selectedNode: GraphNode | null;
+  // Browse-mode props
+  repo?: string;
+  token?: string;
+  selectedFile?: string | null;
 }
 
-type Tab = 'details' | 'security' | 'patterns';
+type Tab = 'details' | 'security' | 'patterns' | 'builddeps';
 
 const SEV_COLOR: Record<string, string> = {
   high: '#ff4466',
@@ -20,11 +26,36 @@ const SEV_BG: Record<string, string> = {
   low: 'rgba(136,136,170,0.08)',
 };
 
-export function RightPanel({ result, selectedNode }: RightPanelProps) {
+export function RightPanel({ result, selectedNode, repo, token, selectedFile }: RightPanelProps) {
   const [tab, setTab] = useState<Tab>('details');
 
   const secCount = result?.security_issues.length ?? 0;
   const patCount = result?.patterns.length ?? 0;
+
+  // Determine if the selected file (from browse or analysis) is a build file
+  const browseFile = selectedFile ?? null;
+  const analyzeFile = selectedNode?.path ?? null;
+  const activeBuildFile = browseFile ?? analyzeFile;
+  const buildFileName = activeBuildFile ? activeBuildFile.split('/').pop() ?? '' : '';
+  const hasBuildDeps = activeBuildFile !== null && isBuildFile(buildFileName);
+
+  // Auto-switch to build deps tab when a build file is selected
+  const [prevBuildFile, setPrevBuildFile] = useState<string | null>(null);
+  if (hasBuildDeps && activeBuildFile !== prevBuildFile) {
+    setPrevBuildFile(activeBuildFile);
+    if (tab !== 'builddeps') setTab('builddeps');
+  }
+  if (!hasBuildDeps && prevBuildFile !== null) {
+    setPrevBuildFile(null);
+    if (tab === 'builddeps') setTab('details');
+  }
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'details', label: 'Details' },
+    { key: 'security', label: `Security${secCount ? ` (${secCount})` : ''}` },
+    { key: 'patterns', label: `Patterns${patCount ? ` (${patCount})` : ''}` },
+    ...(hasBuildDeps ? [{ key: 'builddeps' as Tab, label: '🔨 Build Deps' }] : []),
+  ];
 
   return (
     <aside style={{
@@ -41,12 +72,9 @@ export function RightPanel({ result, selectedNode }: RightPanelProps) {
         display: 'flex',
         borderBottom: '1px solid var(--border)',
         flexShrink: 0,
+        overflowX: 'auto',
       }}>
-        {([
-          { key: 'details', label: 'Details' },
-          { key: 'security', label: `Security${secCount ? ` (${secCount})` : ''}` },
-          { key: 'patterns', label: `Patterns${patCount ? ` (${patCount})` : ''}` },
-        ] as { key: Tab; label: string }[]).map(t => (
+        {tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -60,6 +88,7 @@ export function RightPanel({ result, selectedNode }: RightPanelProps) {
               fontSize: 11,
               fontWeight: tab === t.key ? 700 : 400,
               transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
             }}
           >
             {t.label}
@@ -71,6 +100,13 @@ export function RightPanel({ result, selectedNode }: RightPanelProps) {
         {tab === 'details' && <DetailsTab result={result} selectedNode={selectedNode} />}
         {tab === 'security' && <SecurityTab result={result} />}
         {tab === 'patterns' && <PatternsTab result={result} />}
+        {tab === 'builddeps' && (
+          <BuildDepsPanel
+            repo={repo ?? ''}
+            token={token}
+            filePath={activeBuildFile}
+          />
+        )}
       </div>
     </aside>
   );

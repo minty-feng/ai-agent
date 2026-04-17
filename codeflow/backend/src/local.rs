@@ -59,6 +59,19 @@ fn detect_language(name: &str) -> Option<&'static str> {
     }
 }
 
+/// Returns a language label for any file.  Known languages get their canonical
+/// name; everything else gets the file extension (e.g. "xml", "bazel", "proto").
+/// Files without any extension return "unknown".
+fn language_label(name: &str) -> String {
+    if let Some(lang) = detect_language(name) {
+        return lang.to_string();
+    }
+    match name.rsplit('.').next() {
+        Some(ext) if ext != name => ext.to_lowercase(),
+        _ => "unknown".to_string(),
+    }
+}
+
 /// Read the directory tree rooted at `root`.  Returns an error when the path
 /// does not exist or is not a directory.
 pub fn read_local_tree(root: &Path) -> anyhow::Result<LocalTreeEntry> {
@@ -109,7 +122,7 @@ fn build_tree(dir: &Path, rel_path: &str, depth: usize) -> LocalTreeEntry {
                     suggested_skip: suggested,
                     ..child_entry
                 });
-            } else if child_fs.is_file() && detect_language(&child_name).is_some() {
+            } else if child_fs.is_file() {
                 file_count += 1;
                 // Files are included as leaf nodes (not checkable, just visible).
                 children.push(LocalTreeEntry {
@@ -240,24 +253,27 @@ fn try_read_file(
 ) -> Option<FileInfo> {
     let name = path.file_name()?.to_string_lossy().into_owned();
 
-    let ext = name.rsplit('.').next()?.to_lowercase();
-    if exclude_exts.contains(&ext) {
-        return None;
+    let ext = name.rsplit('.').next().map(|e| e.to_lowercase());
+    if let Some(ref ext) = ext {
+        if ext != &name.to_lowercase() && exclude_exts.contains(ext) {
+            return None;
+        }
     }
 
-    let lang = detect_language(&name)?;
+    let lang = language_label(&name);
 
     let metadata = fs::metadata(path).ok()?;
     if metadata.len() > MAX_FILE_SIZE {
         return None;
     }
 
+    // read_to_string naturally skips binary files (invalid UTF-8 → None).
     let content = fs::read_to_string(path).ok()?;
 
     Some(FileInfo {
         path: rel_path.replace('\\', "/"),
         content,
         size: metadata.len() as usize,
-        language: lang.to_string(),
+        language: lang,
     })
 }

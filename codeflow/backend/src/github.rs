@@ -108,6 +108,21 @@ fn detect_language(path: &str) -> Option<&'static str> {
     }
 }
 
+/// Returns a language label for any file.  Known languages get their canonical
+/// name; everything else gets the file extension (e.g. "xml", "bazel", "proto").
+fn language_label(path: &str) -> String {
+    if let Some(lang) = detect_language(path) {
+        return lang.to_string();
+    }
+    // Use just the filename portion so paths like "src/Makefile" aren't
+    // misinterpreted as having an extension.
+    let name = path.rsplit('/').next().unwrap_or(path);
+    match name.rsplit('.').next() {
+        Some(ext) if ext != name => ext.to_lowercase(),
+        _ => "unknown".to_string(),
+    }
+}
+
 fn should_skip(path: &str) -> bool {
     let skip_dirs = [
         "node_modules/",
@@ -182,9 +197,6 @@ impl GithubClient {
                 if should_skip(&path) {
                     return None;
                 }
-                if detect_language(&path).is_none() {
-                    return None;
-                }
                 let size = item.size.unwrap_or(0);
                 // Skip very large files (>200KB)
                 if size > 200_000 {
@@ -194,14 +206,11 @@ impl GithubClient {
             })
             .collect();
 
-        // Limit to 150 files to avoid rate limits
-        let files: Vec<(String, usize)> = files.into_iter().take(150).collect();
-
         let mut result = Vec::new();
         for (path, size) in files {
             match self.fetch_file_content(owner, repo, &path).await {
                 Ok(content) => {
-                    let language = detect_language(&path).unwrap_or("unknown").to_string();
+                    let language = language_label(&path);
                     result.push(FileInfo {
                         path,
                         content,

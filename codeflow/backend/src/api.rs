@@ -316,9 +316,6 @@ pub async fn local_analyze(
         ));
     }
 
-    // Cap to 300 files to keep analysis responsive.
-    let files: Vec<_> = files.into_iter().take(300).collect();
-
     let result = crate::analyzer::analyze(files);
     Ok(Json(result))
 }

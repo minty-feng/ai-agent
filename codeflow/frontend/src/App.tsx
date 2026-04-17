@@ -13,8 +13,9 @@ import { EmptyState } from './components/EmptyState';
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>('analyze');
+  const [localSelectedBuildFile, setLocalSelectedBuildFile] = useState<string | null>(null);
 
-  const { result, loading: analyzeLoading, error: analyzeError, selectedNode, setSelectedNode, analyze } = useAnalysis();
+  const { result, loading: analyzeLoading, error: analyzeError, selectedNode, setSelectedNode, analyze, analyzedRepo, analyzedToken } = useAnalysis();
   const browser = useFileBrowser();
   const local = useLocalRepo();
 
@@ -131,6 +132,8 @@ export default function App() {
               onAddExcludeExt={local.addExcludeExt}
               onRemoveExcludeExt={local.removeExcludeExt}
               onAnalyze={local.analyze}
+              onSelectBuildFile={setLocalSelectedBuildFile}
+              selectedBuildFile={localSelectedBuildFile}
             />
             {/* Show analysis sidebar next to browser once result is available */}
             {localResult && (
@@ -175,9 +178,10 @@ export default function App() {
         <RightPanel
           result={mode === 'local' ? localResult : result}
           selectedNode={selectedNode}
-          repo={browseRepo}
-          token={browser.token || undefined}
-          selectedFile={mode === 'browse' ? browser.selectedFile : null}
+          repo={mode === 'analyze' ? analyzedRepo : browseRepo}
+          token={mode === 'analyze' ? analyzedToken : (browser.token || undefined)}
+          selectedFile={mode === 'browse' ? browser.selectedFile : mode === 'local' ? localSelectedBuildFile : null}
+          localRootPath={mode === 'local' ? local.rootPath : undefined}
         />
       </div>
     </div>

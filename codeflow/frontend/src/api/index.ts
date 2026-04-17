@@ -1,4 +1,4 @@
-import type { AnalyzeRequest, AnalysisResult, DirEntry, BuildDepsRequest, BuildDepsResponse, GtestAnalyzeRequest, GtestAnalyzeResponse, LocalTreeEntry, LocalAnalyzeRequest } from '../types';
+import type { AnalyzeRequest, AnalysisResult, DirEntry, BuildDepsRequest, BuildDepsResponse, GtestAnalyzeRequest, GtestAnalyzeResponse, LocalTreeEntry, LocalAnalyzeRequest, LocalBuildDepsRequest, LocalGtestAnalyzeRequest } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -73,4 +73,22 @@ export async function analyzeLocalRepo(req: LocalAnalyzeRequest): Promise<Analys
     body: JSON.stringify(req),
   });
   return handleResponse<AnalysisResult>(res);
+}
+
+export async function fetchLocalBuildDeps(req: LocalBuildDepsRequest): Promise<BuildDepsResponse> {
+  const res = await fetch(`${API_BASE}/api/local/build-deps`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<BuildDepsResponse>(res);
+}
+
+export async function fetchLocalGtestAnalysis(req: LocalGtestAnalyzeRequest): Promise<GtestAnalyzeResponse> {
+  const res = await fetch(`${API_BASE}/api/local/gtest-analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<GtestAnalyzeResponse>(res);
 }

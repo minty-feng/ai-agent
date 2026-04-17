@@ -176,3 +176,19 @@ export interface GtestAnalyzeRequest {
   build_file_path: string;
   target: string;
 }
+
+// ---------------------------------------------------------------------------
+// Local build deps / gtest types
+// ---------------------------------------------------------------------------
+
+export interface LocalBuildDepsRequest {
+  root_path: string;
+  file_path: string;
+  target?: string;
+}
+
+export interface LocalGtestAnalyzeRequest {
+  root_path: string;
+  build_file_path: string;
+  target: string;
+}

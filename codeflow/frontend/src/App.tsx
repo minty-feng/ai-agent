@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useFileBrowser } from './hooks/useFileBrowser';
 import { useLocalRepo } from './hooks/useLocalRepo';
@@ -19,35 +19,29 @@ export default function App() {
   const browser = useFileBrowser();
   const local = useLocalRepo();
 
-  const handleAnalyze = (repo: string, token?: string) => {
+  const handleAnalyze = useCallback((repo: string, token?: string) => {
     setMode('analyze');
     if (repo) analyze(repo, token);
-  };
+  }, [analyze]);
 
-  const handleBrowse = (repo: string, token?: string) => {
-    setMode('browse');
-    if (repo) {
-      const cleaned = repo.trim()
-        .replace(/^https?:\/\/github\.com\//, '')
-        .replace(/\/$/, '');
-      const parts = cleaned.split('/');
-      if (parts.length >= 2) {
-        browser.init(parts[0], parts[1], token);
-      }
-    }
-  };
-
-  const handleLoadLocal = (path: string) => {
+  const handleOpenFolder = useCallback((path: string) => {
     setMode('local');
     local.loadTree(path);
-  };
+  }, [local]);
 
-  const handleModeChange = (m: AppMode) => {
-    setMode(m);
-    if (m === 'local' && !local.tree && !local.treeLoading) {
-      // Just switch tab; user will enter a path and click Load
+  const handleRefresh = useCallback(() => {
+    if (mode === 'analyze' && analyzedRepo) {
+      analyze(analyzedRepo, analyzedToken);
+    } else if (mode === 'local' && local.rootPath) {
+      local.loadTree(local.rootPath);
     }
-  };
+  }, [mode, analyzedRepo, analyzedToken, analyze, local]);
+
+  const handleReset = useCallback(() => {
+    setMode('analyze');
+    local.reset();
+    setLocalSelectedBuildFile(null);
+  }, [local]);
 
   // The "repo" string to pass down for build-deps API calls
   const browseRepo = browser.owner && browser.repo ? `${browser.owner}/${browser.repo}` : '';
@@ -66,15 +60,18 @@ export default function App() {
   const localResult = local.result;
   const localSelectedNode = selectedNode;
 
+  const hasData = !!(result || localResult || local.tree || browser.owner);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <TopBar
         onAnalyze={handleAnalyze}
-        onBrowse={handleBrowse}
-        onLoadLocal={handleLoadLocal}
-        onModeChange={handleModeChange}
+        onOpenFolder={handleOpenFolder}
+        onRefresh={handleRefresh}
+        onReset={handleReset}
         loading={topBarLoading}
         mode={mode}
+        hasData={hasData}
       />
 
       {topLevelError && (
@@ -262,9 +259,9 @@ function LocalEmptyState({ loading }: { loading: boolean }) {
         </>
       ) : (
         <>
-          <div style={{ fontSize: 48 }}>💻</div>
+          <div style={{ fontSize: 48 }}>📁</div>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)', textAlign: 'center', padding: '0 24px' }}>
-            Enter the absolute path to a local repository and click Load
+            Click <span style={{ color: 'var(--accent)' }}>Open Folder</span> in the top bar to select a local repository
           </div>
           <div style={{ fontSize: 12, textAlign: 'center', padding: '0 24px' }}>
             Then select the directories you want to analyze

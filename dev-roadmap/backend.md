@@ -121,6 +121,109 @@
   - AOT 编译 + GraalVM Native Image：冷启动 < 100ms
   - `Virtual Threads`（JDK 21）：百万级并发；替代线程池
 
+### C++ — 系统编程与高性能计算
+
+- **现代 C++（C++17/20）核心特性**
+  - 智能指针：`unique_ptr`（独占所有权）、`shared_ptr`（引用计数）、`weak_ptr`（打破循环引用）
+  - RAII：资源获取即初始化；析构函数自动释放资源，无需 `try/finally`
+  - 移动语义：右值引用 `&&`；`std::move` / `std::forward` 避免不必要的深拷贝
+  - 结构化绑定、`std::optional`、`std::variant`、`std::string_view`（零拷贝字符串视图）
+  - `constexpr`：编译期计算；`concepts`（C++20）约束模板参数，提升错误可读性
+
+- **并发编程**
+  - `std::thread` / `std::jthread`（C++20，析构时自动 join）
+  - `std::mutex`、`std::shared_mutex`（读写锁）、`std::lock_guard` / `std::unique_lock`
+  - 原子操作：`std::atomic<T>`；内存序（`memory_order_relaxed` / `acquire` / `release` / `seq_cst`）
+  - 无锁编程：CAS (Compare-And-Swap)；避免 ABA 问题；`std::atomic_flag` 自旋锁
+
+- **内存管理深度**
+  - 内存布局：栈 vs 堆；对象对齐 `alignas(64)` 避免伪共享 (False Sharing)
+  - 自定义内存池：Pool Allocator 减少碎片化、降低分配延迟（HFT 场景关键）
+  - 内存检测工具链：`valgrind`（泄漏检测）、`AddressSanitizer`（越界/UAF）、`MemorySanitizer`
+
+- **性能工程**
+  ```cpp
+  // CRTP 静态多态 — 消除虚函数运行时开销
+  template<typename Derived>
+  class Processor {
+  public:
+      void process() { static_cast<Derived*>(this)->process_impl(); }
+  };
+
+  // 编译期常量，零运行时开销
+  constexpr int factorial(int n) { return n <= 1 ? 1 : n * factorial(n - 1); }
+
+  // 分支预测提示（C++20）
+  if ([[likely]] cache_hit) { return cached; }
+  ```
+  - `perf stat` / `perf record` + 火焰图；`gprof`；`objdump -d` 查看汇编
+  - SIMD 向量化：`-O3 -march=native`；`__builtin_expect` 提示 GCC 分支预测
+  - 缓存友好数据结构：AoS (Array of Structs) vs SoA (Struct of Arrays)；预取 `__builtin_prefetch`
+
+- **适用场景**：游戏引擎（Unreal Engine）、高频交易（HFT 延迟 < 1μs）、数据库内核（RocksDB）、浏览器引擎（V8/WebKit）、嵌入式实时系统
+
+### Rust — 系统编程的现代选择
+
+- **所有权系统（最核心概念）**
+  ```rust
+  // 每个值只有一个所有者，离开作用域自动释放（无 GC）
+  let s1 = String::from("hello");
+  let s2 = s1;  // 所有权转移，s1 不再有效，编译器静态检查
+  
+  // 借用：不转移所有权
+  fn print_len(s: &String) -> usize { s.len() }     // 不可变借用
+  fn append(s: &mut String) { s.push_str(" world"); } // 可变借用
+  // 规则：同一作用域内，可多个不可变引用 OR 一个可变引用，二者不能同时存在
+  ```
+
+- **生命周期 — 编译期引用安全**
+  ```rust
+  // 编译器确保引用不会悬垂（outlive 被引用值）
+  fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+      if x.len() > y.len() { x } else { y }
+  }
+  // 结构体持有引用时必须声明生命周期参数
+  struct Cache<'a> { data: &'a [u8] }
+  ```
+
+- **错误处理 — 无异常的健壮性**
+  ```rust
+  // Result<T, E> 强制调用方处理每个可能的错误
+  fn read_config() -> Result<Config, io::Error> {
+      let content = std::fs::read_to_string("config.toml")?;  // ? 自动传播错误
+      Ok(toml::from_str(&content).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?)
+  }
+  // Option<T> 消除 null pointer，编译期强制处理缺失值
+  let port = config.get("port").and_then(|v| v.parse::<u16>().ok()).unwrap_or(8080);
+  ```
+
+- **异步编程（Tokio 运行时）**
+  ```rust
+  use tokio::{net::TcpListener, io::AsyncReadExt};
+  
+  #[tokio::main]
+  async fn main() -> Result<(), Box<dyn std::error::Error>> {
+      let listener = TcpListener::bind("0.0.0.0:8080").await?;
+      loop {
+          let (mut socket, _) = listener.accept().await?;
+          tokio::spawn(async move {
+              let mut buf = [0u8; 1024];
+              socket.read(&mut buf).await.unwrap();
+          });
+      }
+  }
+  ```
+  - `async/await` 零成本抽象：编译为状态机，无运行时堆分配
+  - `tokio`：多线程工作窃取调度；`tokio::select!` 多路 Future 竞争
+  - 跨线程共享状态：`Arc<Mutex<T>>`；编译器保证无数据竞争
+
+- **零成本抽象**
+  - 迭代器链：`iter().filter().map().collect()` 编译为单次循环，无中间集合
+  - Trait 对象：`dyn Trait`（动态分发）vs 泛型单态化（静态分发，无运行时开销）
+  - `#[inline]` / LTO（链接时优化）；`cargo bench` + `criterion` 微基准测试
+
+- **适用场景**：系统工具（ripgrep/fd/bat）、网络服务（Axum/Actix-web，性能媲美 C++）、WebAssembly（在浏览器运行系统级代码）、区块链（Solana）、嵌入式 `no_std` 环境
+
 ---
 
 ## 四、数据库 — 最重要的竞争力之一

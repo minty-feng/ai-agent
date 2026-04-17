@@ -69,7 +69,96 @@
 
 ---
 
-## 三、Next.js App Router — 全栈核心
+## 三、Node.js 后端运行时深度
+
+全栈工程师必须理解 Node.js 不是"浏览器的服务端版本"，它有完全不同的性能模型和运维特征。
+
+### 事件循环与异步 I/O 模型
+
+```
+libuv 事件循环阶段（每次 tick）：
+timers → pending callbacks → idle/prepare → poll → check → close callbacks
+                                               ↑
+                                     等待 I/O 完成（阻塞上限 = 最近 timer）
+```
+
+- **非阻塞 I/O 本质**：`fs.readFile` / `net.Socket` 委托给 libuv 线程池（默认 4 线程）；CPU 密集型任务阻塞主线程
+- **Worker Threads**：CPU 密集型任务（图像处理、加密）必须用 `worker_threads`；通过 `SharedArrayBuffer` 共享内存，`MessageChannel` 传消息
+- **Cluster 模式 vs PM2**：`cluster.fork()` 多进程利用多核；PM2 `--instances max` 自动 fork；每个进程独立内存，无共享状态 → Redis 统一 Session
+
+### 流式处理（Stream）
+
+```typescript
+import { pipeline } from 'stream/promises';
+import { createReadStream, createWriteStream } from 'fs';
+import { createGzip } from 'zlib';
+
+// pipeline 自动处理背压 (Backpressure)，防止内存溢出
+await pipeline(
+  createReadStream('large-file.csv'),   // Readable
+  csvParser(),                           // Transform
+  createGzip(),                          // Transform
+  createWriteStream('output.csv.gz'),    // Writable
+);
+```
+
+- **背压 (Backpressure)**：下游处理慢时，`write()` 返回 `false`，上游暂停 `push()`；`pipeline` 自动管理
+- **Node.js Streams vs Web Streams API**：Bun/Deno 原生支持 Web Streams；`node:stream/web` 互转工具
+- **大文件上传**：`multipart/form-data` 直接流式写入对象存储，禁止先写磁盘再转存
+
+### 数据库连接池与查询性能
+
+```typescript
+// pg (node-postgres) 连接池配置
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  max: 20,                  // 最大连接数（不超过 DB max_connections / 副本数）
+  idleTimeoutMillis: 30000, // 空闲连接释放时间
+  connectionTimeoutMillis: 2000,
+});
+
+// 始终使用参数化查询（防 SQL 注入 + 执行计划缓存）
+const result = await pool.query(
+  'SELECT * FROM users WHERE email = $1 AND active = $2',
+  [email, true]
+);
+```
+
+- **连接池大小公式**：`connections = (core_count * 2) + effective_spindle_count`（PgBouncer 推荐）
+- **PgBouncer**：数据库连接代理；Transaction 模式下 1000 个应用连接复用 20 个 DB 连接
+- **读写分离**：写操作走主库，读操作走只读副本；ORM 层配置 `replication` 数据源
+
+### Redis 缓存策略
+
+```typescript
+import { createClient } from 'redis';
+const redis = createClient({ url: process.env.REDIS_URL });
+
+// Cache-Aside（旁路缓存）模式
+async function getUser(id: string): Promise<User> {
+  const cached = await redis.get(`user:${id}`);
+  if (cached) return JSON.parse(cached);
+  
+  const user = await db.query.users.findFirst({ where: eq(users.id, id) });
+  if (user) await redis.setEx(`user:${id}`, 3600, JSON.stringify(user)); // TTL 1h
+  return user;
+}
+
+// 缓存失效：数据变更时主动删除
+async function updateUser(id: string, data: Partial<User>) {
+  await db.update(users).set(data).where(eq(users.id, id));
+  await redis.del(`user:${id}`);  // 删除而非更新，避免竞态条件
+}
+```
+
+- **缓存穿透**：查询不存在的 key → 布隆过滤器前置拦截 + 空值缓存（TTL 5min）
+- **缓存雪崩**：大量 key 同时过期 → TTL 加随机抖动 `3600 + Math.random() * 600`
+- **热点 key 击穿**：热门商品秒杀场景 → `SET key value NX PX 500` 互斥锁重建缓存
+
+---
+
+## 四、Next.js App Router — 全栈核心
 
 ### 渲染策略选择
 
@@ -155,7 +244,7 @@ export function middleware(request: NextRequest) {
 
 ---
 
-## 四、数据层 — Prisma vs Drizzle 选型
+## 五、数据层 — Prisma vs Drizzle 选型
 
 ### Prisma — 类型安全 ORM
 
@@ -215,7 +304,7 @@ npx prisma migrate deploy                      # 仅应用待执行迁移
 
 ---
 
-## 五、认证系统实现
+## 六、认证系统实现
 
 ### NextAuth.js v5 配置
 
@@ -275,7 +364,7 @@ const valid = await verify(passwordHash, password);
 
 ---
 
-## 六、API 设计 — tRPC vs REST
+## 七、API 设计 — tRPC vs REST
 
 ### tRPC — 端到端类型安全
 
@@ -325,7 +414,7 @@ DELETE /api/v1/posts/:id          # 删除
 
 ---
 
-## 七、实时功能
+## 八、实时功能
 
 ### Socket.io 多实例广播
 
@@ -365,7 +454,90 @@ export async function GET(req: Request) {
 
 ---
 
-## 八、部署与 DevOps
+## 九、后端服务架构 — 全栈特有视角
+
+全栈工程师需要在一人掌控整个系统时，做出正确的架构取舍。
+
+### 单体 vs 微服务的现实判断
+
+```
+单体架构（Monolith）          微服务架构
+────────────────────         ────────────────
+✅ 团队 < 10 人               ✅ 独立部署、独立扩缩容
+✅ 初创产品快速迭代            ✅ 团队边界清晰（康威定律）
+✅ 运维成本低                  ✅ 技术异构（不同语言/框架）
+✅ 调试简单（单进程）          ❌ 网络延迟、分布式事务复杂
+❌ 扩展瓶颈（全量部署）        ❌ 运维复杂度指数级增长
+
+结论：先做单体，等真正遇到扩展瓶颈再拆分（"Majestic Monolith"）
+```
+
+### BFF（Backend for Frontend）模式
+
+```
+移动端 App ──────┐
+                 ├──► BFF Server ──► 内部 gRPC 微服务
+Web 浏览器 ──────┘    (Node.js)     (用户服务/订单服务/库存服务)
+```
+
+- **BFF 职责**：数据聚合（合并多个服务响应）、格式转换（为不同端定制响应结构）、认证代理
+- **为何用 Node.js 做 BFF**：I/O 密集型聚合天然适合；与前端团队技术栈统一；Server Components 本身就是 BFF
+
+### 后台任务与队列
+
+```typescript
+// BullMQ — Node.js 生产级任务队列（基于 Redis）
+import { Queue, Worker } from 'bullmq';
+
+// 生产者：API 接收请求后立即返回，异步处理
+const emailQueue = new Queue('email', { connection: redisConnection });
+await emailQueue.add('welcome', { userId, email }, {
+  attempts: 3,           // 失败重试 3 次
+  backoff: { type: 'exponential', delay: 2000 },  // 指数退避
+  removeOnComplete: 100, // 保留最近 100 条成功记录
+});
+
+// 消费者（独立进程）
+const worker = new Worker('email', async (job) => {
+  await sendEmail(job.data.email, 'Welcome!');
+}, { connection: redisConnection, concurrency: 5 });
+```
+
+- **适用场景**：发送邮件/短信、图片压缩转码、生成报告、定时同步数据
+- **定时任务**：`BullMQ` Scheduler；`node-cron`（单实例）；分布式场景用 `@nestjs/schedule` + Redis 锁防重复执行
+
+### 优雅停机与零停机部署
+
+```typescript
+// HTTP Server 优雅关闭
+const server = app.listen(3000);
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  
+  // 1. 停止接受新连接
+  server.close(async () => {
+    // 2. 等待进行中的请求完成（最多 30s）
+    await Promise.race([
+      drainConnections(),
+      new Promise(resolve => setTimeout(resolve, 30_000))
+    ]);
+    
+    // 3. 关闭数据库连接池
+    await pool.end();
+    await redis.quit();
+    
+    process.exit(0);
+  });
+});
+```
+
+- **K8s 滚动更新**：`terminationGracePeriodSeconds: 60`；`preStop` hook 等待 5s 让 LB 摘流
+- **健康检查**：`/health/live`（进程存活）vs `/health/ready`（依赖就绪，Ready 后 LB 才导流）
+
+---
+
+## 十、部署与 DevOps
 
 ### Vercel 零配置部署
 
@@ -443,7 +615,7 @@ jobs:
 
 ---
 
-## 九、安全加固清单
+## 十一、安全加固清单
 
 ```
 ✅ 输入验证：所有 API 输入用 Zod 校验
@@ -462,7 +634,7 @@ jobs:
 
 ---
 
-## 十、职业成长路径
+## 十二、职业成长路径
 
 ### 全栈工程师核心竞争力
 

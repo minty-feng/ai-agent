@@ -50,7 +50,7 @@ Additional docs (API shape, benchmark guide, migration notes, etc.) are encourag
 ## 4. Naming Conventions
 
 ### Directory Names (sub-project roots)
-- Use **kebab-case**: `ai-timeline`, `dev-english`, `zhang-zai`.
+- Use **kebab-case**: `ai-timeline`, `tech-english`, `zhang-zai`.
 - Keep names short (1–3 words) and descriptive.
 - No version suffixes (no `v2`, `new-`, `-final`).
 

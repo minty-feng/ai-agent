@@ -28,7 +28,7 @@ Chinese-localized variant of the ApplyFlow application. Uses the same Next.js Ap
 
 A modern, responsive dashboard demo inspired by HackerRank. Showcases dashboard statistics, practice challenge grids, active competitions, skill progress bars, and achievement badges. Built with Next.js 14, TypeScript, and Tailwind CSS.
 
-### [dev-english](dev-english/)
+### [tech-english](tech-english/)
 
 Interactive English training app for programmers. Practice technical vocabulary (algorithms, OS, AI, networking, databases), read real technical passages with comprehension questions, write professional git commit messages, and compose code review comments — all in English. Built with Next.js 15, TypeScript, and Tailwind CSS.
 

@@ -21,7 +21,7 @@ Interactive English training app for programmers. Practice technical vocabulary,
 
 1. Navigate to the project directory:
 ```bash
-cd dev-english
+cd tech-english
 ```
 
 2. Install dependencies:
@@ -55,7 +55,7 @@ npm start       # serves production build on port 3003
 ## Project Structure
 
 ```
-dev-english/
+tech-english/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx            # Root layout — metadata, Header, global styles

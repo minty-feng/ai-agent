@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-base: #0a0a0c;
+  --bg-panel: #0f0f12;
+  --bg-surface: #161619;
+  --bg-hover: #1e1e22;
+  --accent: #00ff9d;
+  --accent-dim: #00cc7d;
+  --accent-glow: rgba(0, 255, 157, 0.15);
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888aa;
+  --text-muted: #555568;
+  --border: #222230;
+  --border-bright: #333345;
+  --red: #ff4466;
+  --yellow: #ffcc00;
+  --blue: #4488ff;
+  --purple: #aa66ff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+button { cursor: pointer; font-family: inherit; }
+input { font-family: inherit; }

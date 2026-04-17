@@ -15,6 +15,8 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>('analyze');
   const [localSelectedBuildFile, setLocalSelectedBuildFile] = useState<string | null>(null);
 
+  const [localError, setLocalError] = useState<string | null>(null);
+
   const { result, loading: analyzeLoading, error: analyzeError, selectedNode, setSelectedNode, analyze, analyzedRepo, analyzedToken } = useAnalysis();
   const browser = useFileBrowser();
   const local = useLocalRepo();
@@ -24,9 +26,22 @@ export default function App() {
     if (repo) analyze(repo, token);
   }, [analyze]);
 
-  const handleOpenFolder = useCallback((path: string) => {
-    setMode('local');
-    local.loadTree(path);
+  const handleOpenFolder = useCallback(() => {
+    if (!window.showDirectoryPicker) {
+      setLocalError('Your browser does not support folder selection. Please use Chrome, Edge, or a Chromium-based browser.');
+      setMode('local');
+      return;
+    }
+    window.showDirectoryPicker().then((handle) => {
+      setLocalError(null);
+      setMode('local');
+      local.loadTreeFromHandle(handle);
+    }).catch((e: unknown) => {
+      // User cancelled the picker – not an error
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      setLocalError('Failed to open folder: ' + (e instanceof Error ? e.message : String(e)));
+      setMode('local');
+    });
   }, [local]);
 
   const handleRefresh = useCallback(() => {
@@ -39,6 +54,7 @@ export default function App() {
 
   const handleReset = useCallback(() => {
     setMode('analyze');
+    setLocalError(null);
     local.reset();
     setLocalSelectedBuildFile(null);
   }, [local]);
@@ -54,7 +70,7 @@ export default function App() {
   const topLevelError =
     mode === 'analyze' ? analyzeError
     : mode === 'browse' ? browser.error
-    : local.treeError;
+    : localError || local.treeError;
 
   // For local mode: after analysis completes, show the result via the standard sidebar + graph
   const localResult = local.result;

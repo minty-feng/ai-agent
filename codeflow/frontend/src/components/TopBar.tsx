@@ -4,7 +4,7 @@ export type AppMode = 'analyze' | 'browse' | 'local';
 
 interface TopBarProps {
   onAnalyze: (repo: string, token?: string) => void;
-  onOpenFolder: (path: string) => void;
+  onOpenFolder: () => void;
   onRefresh: () => void;
   onReset: () => void;
   loading: boolean;
@@ -25,10 +25,7 @@ export function TopBar({ onAnalyze, onOpenFolder, onRefresh, onReset, loading, m
 
   const handleOpenFolder = () => {
     if (loading) return;
-    const path = prompt('Enter the absolute path to a local repository:');
-    if (path && path.trim()) {
-      onOpenFolder(path.trim());
-    }
+    onOpenFolder();
   };
 
   const analyzeDisabled = loading || !repo.trim();

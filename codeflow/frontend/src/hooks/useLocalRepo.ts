@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { LocalTreeEntry, AnalysisResult } from '../types';
-import { fetchLocalTree, analyzeLocalRepo } from '../api';
+import { fetchLocalTree, analyzeLocalRepo, analyzeLocalFiles } from '../api';
+import { readTreeFromHandle, collectFilesFromHandle } from './useLocalRepoFS';
 
 // ---------------------------------------------------------------------------
 // Helpers to traverse the tree
@@ -40,16 +41,9 @@ function collectDescendantDirPaths(entry: LocalTreeEntry, targetPath: string): s
 }
 
 // ---------------------------------------------------------------------------
-// Request builder
+// Request builder (for backend-path mode only)
 // ---------------------------------------------------------------------------
 
-/**
- * Build the analysis request from the current checkbox + exclusion state.
- *
- * Strategy: send the *unchecked* dirs as explicit exclude_paths together with
- * the user's manual exclusions.  include_paths is kept empty (= all) so the
- * backend does not need to enumerate every selected dir.
- */
 function buildRequest(
   rootPath: string,
   checkedDirs: Set<string>,
@@ -63,6 +57,22 @@ function buildRequest(
     exclude_paths: [...unchecked, ...exclusions.paths],
     exclude_extensions: exclusions.extensions,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Shared init-checks helper
+// ---------------------------------------------------------------------------
+
+function initCheckedDirs(entry: LocalTreeEntry): Set<string> {
+  const initialChecked = new Set<string>();
+  function walk(e: LocalTreeEntry) {
+    if (e.is_dir && e.path !== '') {
+      if (!e.suggested_skip) initialChecked.add(e.path);
+    }
+    for (const c of e.children) walk(c);
+  }
+  walk(entry);
+  return initialChecked;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +91,10 @@ export interface LocalRepoState {
   analyzeError: string | null;
   result: AnalysisResult | null;
 
+  /** Load tree from an absolute path via the backend. */
   loadTree: (path: string) => Promise<void>;
+  /** Load tree from a FileSystemDirectoryHandle (showDirectoryPicker). */
+  loadTreeFromHandle: (handle: FileSystemDirectoryHandle) => Promise<void>;
   /** Toggle a directory (with cascade to all descendants). */
   toggleDir: (path: string) => void;
   selectAll: () => void;
@@ -109,7 +122,12 @@ export function useLocalRepo(): LocalRepoState {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
+  // Store the directory handle for FS-based mode
+  const dirHandleRef = useRef<FileSystemDirectoryHandle | null>(null);
+
+  // ----- Load tree from backend (path mode) -----
   const loadTree = useCallback(async (path: string) => {
+    dirHandleRef.current = null; // clear handle mode
     setTreeLoading(true);
     setTreeError(null);
     setTree(null);
@@ -118,22 +136,31 @@ export function useLocalRepo(): LocalRepoState {
     try {
       const entry = await fetchLocalTree(path);
       const dirs = collectAllDirPaths(entry);
-
-      // Default: check all dirs EXCEPT suggested-skip ones.
-      const initialChecked = new Set<string>();
-      function initChecks(e: LocalTreeEntry) {
-        if (e.is_dir && e.path !== '') {
-          if (!e.suggested_skip) initialChecked.add(e.path);
-        }
-        // For suggested-skip dirs, still recurse so their children default correctly.
-        // But we only add non-suggested-skip dirs.
-        for (const c of e.children) initChecks(c);
-      }
-      initChecks(entry);
-
       setTree(entry);
       setAllDirPaths(dirs);
-      setCheckedDirs(initialChecked);
+      setCheckedDirs(initCheckedDirs(entry));
+      setExclusions({ paths: [], extensions: [] });
+    } catch (e) {
+      setTreeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTreeLoading(false);
+    }
+  }, []);
+
+  // ----- Load tree from FileSystemDirectoryHandle -----
+  const loadTreeFromHandle = useCallback(async (handle: FileSystemDirectoryHandle) => {
+    dirHandleRef.current = handle;
+    setTreeLoading(true);
+    setTreeError(null);
+    setTree(null);
+    setResult(null);
+    setRootPath(handle.name); // display name only (no absolute path)
+    try {
+      const entry = await readTreeFromHandle(handle);
+      const dirs = collectAllDirPaths(entry);
+      setTree(entry);
+      setAllDirPaths(dirs);
+      setCheckedDirs(initCheckedDirs(entry));
       setExclusions({ paths: [], extensions: [] });
     } catch (e) {
       setTreeError(e instanceof Error ? e.message : String(e));
@@ -196,9 +223,25 @@ export function useLocalRepo(): LocalRepoState {
     setAnalyzeError(null);
     setResult(null);
     try {
-      const req = buildRequest(rootPath, checkedDirs, allDirPaths, exclusions);
-      const data = await analyzeLocalRepo(req);
-      setResult(data);
+      if (dirHandleRef.current) {
+        // FS handle mode: read file contents client-side and send to backend
+        const files = await collectFilesFromHandle(
+          dirHandleRef.current,
+          checkedDirs,
+          exclusions.paths,
+          exclusions.extensions,
+        );
+        if (files.length === 0) {
+          throw new Error('No supported source files found with the current selection.');
+        }
+        const data = await analyzeLocalFiles({ files });
+        setResult(data);
+      } else {
+        // Backend path mode (fallback)
+        const req = buildRequest(rootPath, checkedDirs, allDirPaths, exclusions);
+        const data = await analyzeLocalRepo(req);
+        setResult(data);
+      }
     } catch (e) {
       setAnalyzeError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -207,6 +250,7 @@ export function useLocalRepo(): LocalRepoState {
   }, [tree, rootPath, checkedDirs, allDirPaths, exclusions]);
 
   const reset = useCallback(() => {
+    dirHandleRef.current = null;
     setRootPath('');
     setTree(null);
     setAllDirPaths([]);
@@ -231,6 +275,7 @@ export function useLocalRepo(): LocalRepoState {
     analyzeError,
     result,
     loadTree,
+    loadTreeFromHandle,
     toggleDir,
     selectAll,
     deselectAll,

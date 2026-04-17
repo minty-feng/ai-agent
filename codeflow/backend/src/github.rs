@@ -53,22 +53,36 @@ struct ContentsItem {
 /// Top-level item in a commits list response.
 #[derive(Deserialize)]
 struct CommitListItem {
+    sha: String,
     commit: CommitData,
 }
 
 #[derive(Deserialize)]
 struct CommitData {
+    message: String,
+    author: CommitPersonData,
     committer: CommitPersonData,
 }
 
 #[derive(Deserialize)]
 struct CommitPersonData {
+    #[serde(default)]
+    name: String,
     date: String,
 }
 
 #[derive(Deserialize)]
 struct RepoInfo {
     default_branch: String,
+}
+
+/// A single commit summary for public API use.
+#[derive(Debug, Clone, Serialize)]
+pub struct CommitInfo {
+    pub sha: String,
+    pub message: String,
+    pub author: String,
+    pub date: String,
 }
 
 fn detect_language(path: &str) -> Option<&'static str> {
@@ -248,6 +262,31 @@ impl GithubClient {
         );
         let commits: Vec<CommitListItem> = self.get_json(&url).await?;
         Ok(commits.into_iter().next().map(|c| c.commit.committer.date))
+    }
+
+    /// Returns the last `per_page` commits that touched `path`, as `CommitInfo` records.
+    pub async fn fetch_commits(
+        &self,
+        owner: &str,
+        repo: &str,
+        path: &str,
+        per_page: usize,
+    ) -> Result<Vec<CommitInfo>> {
+        let url = format!(
+            "https://api.github.com/repos/{}/{}/commits?path={}&per_page={}",
+            owner, repo, path, per_page
+        );
+        let items: Vec<CommitListItem> = self.get_json(&url).await?;
+        let commits = items
+            .into_iter()
+            .map(|c| CommitInfo {
+                sha: c.sha[..c.sha.len().min(8)].to_string(),
+                message: c.commit.message.lines().next().unwrap_or("").to_string(),
+                author: c.commit.author.name.clone(),
+                date: c.commit.author.date.clone(),
+            })
+            .collect();
+        Ok(commits)
     }
 
     /// Public version so API handlers can call it directly.

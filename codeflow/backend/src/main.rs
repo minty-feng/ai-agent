@@ -22,6 +22,7 @@ async fn main() {
         .route("/api/tree/{owner}/{repo}", get(api::get_tree))
         .route("/api/file/{owner}/{repo}", get(api::get_file))
         .route("/api/build-deps", post(api::get_build_deps))
+        .route("/api/gtest-analyze", post(api::gtest_analyze))
         .route("/api/local/tree", post(api::local_tree))
         .route("/api/local/analyze", post(api::local_analyze))
         .layer(cors);

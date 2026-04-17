@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use regex::Regex;
 
 /// One build target together with the source files that belong to it.
@@ -6,6 +6,22 @@ use regex::Regex;
 pub struct ParsedTarget {
     pub name: String,
     pub sources: Vec<String>,
+    /// True when this target is a GTest / GMock test target.
+    pub is_test: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Include-directive parser (for dependency analysis)
+// ---------------------------------------------------------------------------
+
+/// Parse `#include "..."` and `#include <...>` directives from C/C++ source.
+/// Returns the raw include paths (e.g. `"foo/bar.h"` or `<vector>`).
+pub fn parse_includes(content: &str) -> Vec<String> {
+    let re = Regex::new(r#"^\s*#\s*include\s+["<]([^">]+)[">]"#).expect("valid regex");
+    content
+        .lines()
+        .filter_map(|line| re.captures(line).map(|cap| cap[1].to_string()))
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -19,8 +35,10 @@ pub fn parse_cmake(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
     let commands = extract_cmake_commands(content);
     let mut variables: HashMap<String, Vec<String>> = HashMap::new();
     let mut targets: Vec<ParsedTarget> = Vec::new();
+    // Track targets explicitly identified as GTest targets
+    let mut gtest_linked: HashSet<String> = HashSet::new();
 
-    for (cmd_name, args) in commands {
+    for (cmd_name, args) in &commands {
         match cmd_name.to_lowercase().as_str() {
             "set" => {
                 if args.len() >= 2 {
@@ -31,7 +49,7 @@ pub fn parse_cmake(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
                 }
             }
             "add_executable" | "add_library" => {
-                if let Some((name, sources)) = parse_target_command(&args, &variables, base_dir) {
+                if let Some((name, sources)) = parse_target_command(args, &variables, base_dir) {
                     merge_target(&mut targets, name, sources);
                 }
             }
@@ -51,18 +69,62 @@ pub fn parse_cmake(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
                     merge_target(&mut targets, name, sources);
                 }
             }
+            "target_link_libraries" => {
+                // target_link_libraries(TARGET_NAME [PUBLIC|PRIVATE|INTERFACE] lib1 lib2 ...)
+                if !args.is_empty() {
+                    let target_name = args[0].clone();
+                    let links_gtest = args[1..].iter().any(|a| {
+                        let lower = a.to_lowercase();
+                        lower == "gtest"
+                            || lower == "gtest_main"
+                            || lower == "gmock"
+                            || lower == "gmock_main"
+                            || lower.ends_with("::gtest")
+                            || lower.ends_with("::gtest_main")
+                            || lower.ends_with("::gmock")
+                            || lower.ends_with("::gmock_main")
+                    });
+                    if links_gtest {
+                        gtest_linked.insert(target_name);
+                    }
+                }
+            }
+            "gtest_add_tests" | "gtest_discover_tests" => {
+                // gtest_discover_tests(TARGET_NAME ...)
+                if !args.is_empty() {
+                    gtest_linked.insert(args[0].clone());
+                }
+            }
             _ => {}
+        }
+    }
+
+    // Mark test targets: either explicitly linked to gtest or named like a test
+    for target in &mut targets {
+        if gtest_linked.contains(&target.name) || is_cmake_test_name(&target.name) {
+            target.is_test = true;
         }
     }
 
     targets
 }
 
+/// Heuristic: target name looks like a C++ test target.
+fn is_cmake_test_name(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    lower.ends_with("_test")
+        || lower.ends_with("_tests")
+        || lower.starts_with("test_")
+        || lower == "test"
+        || lower.contains("_test_")
+        || lower.contains("gtest")
+}
+
 fn merge_target(targets: &mut Vec<ParsedTarget>, name: String, sources: Vec<String>) {
     if let Some(t) = targets.iter_mut().find(|t| t.name == name) {
         t.sources.extend(sources);
     } else if !name.is_empty() {
-        targets.push(ParsedTarget { name, sources });
+        targets.push(ParsedTarget { name, sources, is_test: false });
     }
 }
 
@@ -269,7 +331,9 @@ pub fn parse_bazel(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
     .expect("valid regex");
 
     for cap in rule_re.captures_iter(content) {
+        let rule_type = &cap[1];
         let body = &cap[2];
+        let is_test = rule_type == "cc_test" || rule_type == "py_test";
 
         // name = "target_name"
         let name_re = Regex::new(r#"name\s*=\s*"([^"]+)""#).expect("valid regex");
@@ -292,7 +356,7 @@ pub fn parse_bazel(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
             }
         }
 
-        targets.push(ParsedTarget { name, sources });
+        targets.push(ParsedTarget { name, sources, is_test });
     }
 
     targets

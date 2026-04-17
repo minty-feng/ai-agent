@@ -20,6 +20,7 @@ const LANG_COLORS: Record<string, string> = {
 
 export function Sidebar({ result, selectedNode, onSelectNode }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [langsCollapsed, setLangsCollapsed] = useState(false);
 
   const toggleFolder = (folder: string) => {
     setExpandedFolders(prev => {
@@ -75,19 +76,38 @@ export function Sidebar({ result, selectedNode, onSelectNode }: SidebarProps) {
         <StatCard label="Security" value={result.security_issues.length} warn={result.security_issues.length > 0} />
       </div>
 
-      {/* Languages */}
-      <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 8, letterSpacing: 1 }}>LANGUAGES</div>
-        {Object.entries(stats.languages).sort((a, b) => b[1] - a[1]).map(([lang, count]) => (
-          <div key={lang} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{
-              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              background: LANG_COLORS[lang] || '#888',
-            }} />
-            <span style={{ color: 'var(--text-secondary)', flex: 1, fontSize: 12 }}>{lang}</span>
-            <span style={{ color: 'var(--text-primary)' }}>{count}</span>
+      {/* Languages (collapsible) */}
+      <div style={{ borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div
+          onClick={() => setLangsCollapsed(v => !v)}
+          style={{
+            padding: '10px 12px 6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >
+          <div style={{ color: 'var(--text-muted)', fontSize: 11, letterSpacing: 1 }}>
+            LANGUAGES ({Object.keys(stats.languages).length})
           </div>
-        ))}
+          <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{langsCollapsed ? '▶' : '▼'}</span>
+        </div>
+        {!langsCollapsed && (
+          <div style={{ padding: '0 12px 10px', maxHeight: 120, overflowY: 'auto' }}>
+            {Object.entries(stats.languages).sort((a, b) => b[1] - a[1]).map(([lang, count]) => (
+              <div key={lang} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  background: LANG_COLORS[lang] || '#888',
+                }} />
+                <span style={{ color: 'var(--text-secondary)', flex: 1, fontSize: 12 }}>{lang}</span>
+                <span style={{ color: 'var(--text-primary)' }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* File tree */}
@@ -264,7 +284,7 @@ function fileIcon(ext: string): string {
   const icons: Record<string, string> = {
     ts: '🔷', tsx: '⚛️', js: '📜', jsx: '⚛️', py: '🐍', go: '🐹',
     rs: '🦀', java: '☕', rb: '💎', php: '🐘', vue: '💚', svelte: '🧡',
-    cs: '💜', cpp: '⚙️', c: '⚙️', h: '📎',
+    cs: '💜', cpp: '⚙️', c: '⚙️', h: '📎', bazel: '🔨', bzl: '🔨',
   };
   return icons[ext] || '📄';
 }

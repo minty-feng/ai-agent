@@ -2,7 +2,7 @@ use axum::{extract::{Json, Path, Query}, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use crate::analyzer::{self, AnalysisResult};
-use crate::github::{DirEntry, GithubClient, parse_repo_input};
+use crate::github::{CommitInfo, DirEntry, GithubClient, parse_repo_input};
 
 #[derive(Deserialize)]
 pub struct AnalyzeRequest {
@@ -135,6 +135,8 @@ pub struct SourceFileInfo {
 #[derive(Serialize)]
 pub struct BuildDepsResponse {
     pub targets: Vec<String>,
+    /// Subset of `targets` that are GTest / test targets.
+    pub test_targets: Vec<String>,
     pub files: Vec<SourceFileInfo>,
 }
 
@@ -178,6 +180,11 @@ pub async fn get_build_deps(
     };
 
     let all_target_names: Vec<String> = parsed_targets.iter().map(|t| t.name.clone()).collect();
+    let test_target_names: Vec<String> = parsed_targets
+        .iter()
+        .filter(|t| t.is_test)
+        .map(|t| t.name.clone())
+        .collect();
 
     // Collect source files for the requested target (or all targets)
     let source_files: Vec<String> = if let Some(ref target_name) = req.target {
@@ -230,6 +237,7 @@ pub async fn get_build_deps(
 
     Ok(Json(BuildDepsResponse {
         targets: all_target_names,
+        test_targets: test_target_names,
         files,
     }))
 }
@@ -322,4 +330,176 @@ fn detect_language_simple(path: &str) -> String {
         Some("py") => "python".to_string(),
         _ => "unknown".to_string(),
     }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/gtest-analyze
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct GtestAnalyzeRequest {
+    pub repo: String,
+    pub token: Option<String>,
+    /// Path to the CMakeLists.txt or BUILD file inside the repo.
+    pub build_file_path: String,
+    /// Name of the GTest target to analyze.
+    pub target: String,
+}
+
+#[derive(Serialize, Clone)]
+pub struct GtestFileAnalysis {
+    pub path: String,
+    pub language: String,
+    /// Last N commits that touched this file.
+    pub commits: Vec<CommitInfo>,
+    /// Raw `#include` paths found in the file (C/C++) or imports (Python).
+    pub includes: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct DepEdge {
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Serialize)]
+pub struct GtestAnalyzeResponse {
+    pub target: String,
+    pub files: Vec<GtestFileAnalysis>,
+    /// Edges between source files in the target based on include/import analysis.
+    pub dep_edges: Vec<DepEdge>,
+}
+
+pub async fn gtest_analyze(
+    Json(req): Json<GtestAnalyzeRequest>,
+) -> Result<Json<GtestAnalyzeResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let (owner, repo_name) = parse_repo_input(&req.repo).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse { error: e.to_string() }),
+        )
+    })?;
+
+    let client = GithubClient::new(req.token.clone());
+
+    // Fetch the build file
+    let content = client
+        .fetch_file_content_pub(&owner, &repo_name, &req.build_file_path)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(ErrorResponse { error: e.to_string() }),
+            )
+        })?;
+
+    let base_dir = req
+        .build_file_path
+        .rsplitn(2, '/')
+        .nth(1)
+        .unwrap_or("")
+        .to_string();
+
+    let file_name = req.build_file_path.split('/').last().unwrap_or("");
+    let parsed_targets = if file_name.to_lowercase() == "cmakelists.txt" {
+        crate::build_parser::parse_cmake(&content, &base_dir)
+    } else {
+        crate::build_parser::parse_bazel(&content, &base_dir)
+    };
+
+    // Find the requested target
+    let target = parsed_targets
+        .into_iter()
+        .find(|t| t.name == req.target)
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(ErrorResponse {
+                    error: format!("Target '{}' not found in build file", req.target),
+                }),
+            )
+        })?;
+
+    // Deduplicate source files
+    let mut seen = std::collections::HashSet::new();
+    let source_files: Vec<String> = target
+        .sources
+        .into_iter()
+        .filter(|s| seen.insert(s.clone()))
+        .collect();
+
+    // Build a set of basenames for dep-edge detection
+    let basename_to_path: std::collections::HashMap<String, String> = source_files
+        .iter()
+        .map(|p| {
+            let base = p.split('/').last().unwrap_or(p.as_str()).to_string();
+            (base, p.clone())
+        })
+        .collect();
+
+    // Fetch content + commits for every source file concurrently
+    let client = Arc::new(client);
+    let owner = Arc::new(owner);
+    let repo_name = Arc::new(repo_name);
+
+    let mut handles = Vec::new();
+    for path in source_files {
+        let client = client.clone();
+        let owner = owner.clone();
+        let repo_name = repo_name.clone();
+        handles.push(tokio::spawn(async move {
+            let language = detect_language_simple(&path);
+
+            let (file_content, commits) = tokio::join!(
+                client.fetch_file_content_pub(&owner, &repo_name, &path),
+                client.fetch_commits(&owner, &repo_name, &path, 10),
+            );
+
+            let includes = match &file_content {
+                Ok(c) => crate::build_parser::parse_includes(c),
+                Err(_) => vec![],
+            };
+
+            let commits = commits.unwrap_or_default();
+
+            GtestFileAnalysis { path, language, commits, includes }
+        }));
+    }
+
+    let mut files: Vec<GtestFileAnalysis> = Vec::new();
+    for handle in handles {
+        if let Ok(info) = handle.await {
+            files.push(info);
+        }
+    }
+
+    // Sort by most-recently-committed first
+    files.sort_by(|a, b| {
+        let a_date = a.commits.first().map(|c| c.date.as_str()).unwrap_or("");
+        let b_date = b.commits.first().map(|c| c.date.as_str()).unwrap_or("");
+        b_date.cmp(a_date)
+    });
+
+    // Build dep edges: an edge from file A to file B if A includes a file whose
+    // basename matches B's basename (and A != B).
+    let mut dep_edges: Vec<DepEdge> = Vec::new();
+    for file in &files {
+        for include in &file.includes {
+            let include_base = include.split('/').last().unwrap_or(include.as_str());
+            if let Some(target_path) = basename_to_path.get(include_base) {
+                if target_path != &file.path {
+                    dep_edges.push(DepEdge {
+                        from: file.path.clone(),
+                        to: target_path.clone(),
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(Json(GtestAnalyzeResponse {
+        target: req.target,
+        files,
+        dep_edges,
+    }))
 }

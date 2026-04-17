@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { AnalysisResult, GraphNode } from '../types';
 import { BuildDepsPanel } from './BuildDepsPanel';
+import { GtestPanel } from './GtestPanel';
 import { isBuildFile } from './FileBrowser';
 
 interface RightPanelProps {
@@ -12,7 +13,7 @@ interface RightPanelProps {
   selectedFile?: string | null;
 }
 
-type Tab = 'details' | 'security' | 'patterns' | 'builddeps';
+type Tab = 'details' | 'security' | 'patterns' | 'builddeps' | 'gtest';
 
 const SEV_COLOR: Record<string, string> = {
   high: '#ff4466',
@@ -55,6 +56,7 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile }: 
     { key: 'security', label: `Security${secCount ? ` (${secCount})` : ''}` },
     { key: 'patterns', label: `Patterns${patCount ? ` (${patCount})` : ''}` },
     ...(hasBuildDeps ? [{ key: 'builddeps' as Tab, label: '🔨 Build Deps' }] : []),
+    ...(hasBuildDeps ? [{ key: 'gtest' as Tab, label: '🧪 GTest' }] : []),
   ];
 
   return (
@@ -102,6 +104,13 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile }: 
         {tab === 'patterns' && <PatternsTab result={result} />}
         {tab === 'builddeps' && (
           <BuildDepsPanel
+            repo={repo ?? ''}
+            token={token}
+            filePath={activeBuildFile}
+          />
+        )}
+        {tab === 'gtest' && (
+          <GtestPanel
             repo={repo ?? ''}
             token={token}
             filePath={activeBuildFile}

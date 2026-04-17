@@ -129,6 +129,8 @@ export interface SourceFileInfo {
 
 export interface BuildDepsResponse {
   targets: string[];
+  /** Subset of targets that are GTest / test targets. */
+  test_targets: string[];
   files: SourceFileInfo[];
 }
 
@@ -137,4 +139,40 @@ export interface BuildDepsRequest {
   token?: string;
   file_path: string;
   target?: string;
+}
+
+// ---------------------------------------------------------------------------
+// GTest analysis types
+// ---------------------------------------------------------------------------
+
+export interface CommitInfo {
+  sha: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export interface GtestFileAnalysis {
+  path: string;
+  language: string;
+  commits: CommitInfo[];
+  includes: string[];
+}
+
+export interface DepEdge {
+  from: string;
+  to: string;
+}
+
+export interface GtestAnalyzeResponse {
+  target: string;
+  files: GtestFileAnalysis[];
+  dep_edges: DepEdge[];
+}
+
+export interface GtestAnalyzeRequest {
+  repo: string;
+  token?: string;
+  build_file_path: string;
+  target: string;
 }

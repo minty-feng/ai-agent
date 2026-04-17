@@ -192,3 +192,18 @@ export interface LocalGtestAnalyzeRequest {
   build_file_path: string;
   target: string;
 }
+
+// ---------------------------------------------------------------------------
+// File-content based analysis (used with showDirectoryPicker)
+// ---------------------------------------------------------------------------
+
+export interface FilePayload {
+  path: string;
+  content: string;
+  size: number;
+  language: string;
+}
+
+export interface AnalyzeFilesRequest {
+  files: FilePayload[];
+}

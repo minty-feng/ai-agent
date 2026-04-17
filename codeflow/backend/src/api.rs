@@ -320,6 +320,53 @@ pub async fn local_analyze(
     Ok(Json(result))
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/local/analyze-files
+// ---------------------------------------------------------------------------
+
+/// A single file with its content, sent from the browser (File System Access API).
+#[derive(Deserialize)]
+pub struct FilePayload {
+    pub path: String,
+    pub content: String,
+    pub size: usize,
+    pub language: String,
+}
+
+#[derive(Deserialize)]
+pub struct AnalyzeFilesRequest {
+    pub files: Vec<FilePayload>,
+}
+
+/// Accepts pre-read file contents from the browser (used when the frontend
+/// opens a folder via `showDirectoryPicker` and reads files client-side).
+pub async fn analyze_files(
+    Json(req): Json<AnalyzeFilesRequest>,
+) -> Result<Json<AnalysisResult>, (StatusCode, Json<ErrorResponse>)> {
+    if req.files.is_empty() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
+                error: "No files provided for analysis.".to_string(),
+            }),
+        ));
+    }
+
+    let files: Vec<crate::github::FileInfo> = req
+        .files
+        .into_iter()
+        .map(|f| crate::github::FileInfo {
+            path: f.path,
+            content: f.content,
+            size: f.size,
+            language: f.language,
+        })
+        .collect();
+
+    let result = crate::analyzer::analyze(files);
+    Ok(Json(result))
+}
+
 fn detect_language_simple(path: &str) -> String {
     match path.rsplit('.').next() {
         Some("cpp") | Some("cc") | Some("cxx") | Some("h") | Some("hpp") => "cpp".to_string(),

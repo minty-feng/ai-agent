@@ -280,7 +280,7 @@ impl GithubClient {
         let commits = items
             .into_iter()
             .map(|c| CommitInfo {
-                sha: c.sha[..c.sha.len().min(8)].to_string(),
+                sha: c.sha.chars().take(8).collect(),
                 message: c.commit.message.lines().next().unwrap_or("").to_string(),
                 author: c.commit.author.name.clone(),
                 date: c.commit.author.date.clone(),

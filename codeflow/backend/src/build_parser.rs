@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
 use regex::Regex;
 
 /// One build target together with the source files that belong to it.
@@ -17,7 +18,10 @@ pub struct ParsedTarget {
 /// Parse `#include "..."` and `#include <...>` directives from C/C++ source.
 /// Returns the raw include paths (e.g. `"foo/bar.h"` or `<vector>`).
 pub fn parse_includes(content: &str) -> Vec<String> {
-    let re = Regex::new(r#"^\s*#\s*include\s+["<]([^">]+)[">]"#).expect("valid regex");
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| {
+        Regex::new(r#"^\s*#\s*include\s+["<]([^">]+)[">]"#).expect("valid regex")
+    });
     content
         .lines()
         .filter_map(|line| re.captures(line).map(|cap| cap[1].to_string()))

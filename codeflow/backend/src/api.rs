@@ -546,6 +546,18 @@ pub async fn local_gtest_analyze(
                         to: target_path.clone(),
                     });
                 }
+            } else {
+                // Search upward from the BUILD directory for the include
+                if let Some(found) =
+                    crate::build_parser::find_include_upward(root, &base_dir, include)
+                {
+                    if found != file.path {
+                        dep_edges.push(DepEdge {
+                            from: file.path.clone(),
+                            to: found,
+                        });
+                    }
+                }
             }
         }
     }
@@ -556,8 +568,6 @@ pub async fn local_gtest_analyze(
         dep_edges,
     }))
 }
-
-// ---------------------------------------------------------------------------
 // POST /api/gtest-analyze
 // ---------------------------------------------------------------------------
 

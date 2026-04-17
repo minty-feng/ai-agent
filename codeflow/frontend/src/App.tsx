@@ -263,7 +263,7 @@ function LocalEmptyState({ loading }: { loading: boolean }) {
             Enter the absolute path to a local repository and click Load
           </div>
           <div style={{ fontSize: 12, textAlign: 'center', padding: '0 24px' }}>
-            Then select the directories you want to analyse
+            Then select the directories you want to analyze
           </div>
         </>
       )}
@@ -279,7 +279,7 @@ function LocalMainEmptyState({ hasTree, loading }: { hasTree: boolean; loading: 
         alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)',
       }}>
         <div style={{ fontSize: 32 }}>⚡</div>
-        <div style={{ fontSize: 14 }}>Analysing…</div>
+        <div style={{ fontSize: 14 }}>Analyzing…</div>
       </div>
     );
   }
@@ -291,7 +291,7 @@ function LocalMainEmptyState({ hasTree, loading }: { hasTree: boolean; loading: 
     }}>
       <div style={{ fontSize: 48 }}>📂</div>
       <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-        Select directories on the left and click ⚡ Analyse Selected
+        Select directories on the left and click ⚡ Analyze Selected
       </div>
     </div>
   );

@@ -388,22 +388,29 @@ pub struct LocalBuildDepsRequest {
     pub file_path: String,
     /// Optional target name to filter sources.
     pub target: Option<String>,
+    /// Optional file content (used when the backend cannot access the FS,
+    /// e.g. when the frontend reads via showDirectoryPicker).
+    pub file_content: Option<String>,
 }
 
 pub async fn local_build_deps(
     Json(req): Json<LocalBuildDepsRequest>,
 ) -> Result<Json<BuildDepsResponse>, (StatusCode, Json<ErrorResponse>)> {
     let root = std::path::Path::new(&req.root_path);
-    let full_path = root.join(&req.file_path);
 
-    let content = std::fs::read_to_string(&full_path).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!("Cannot read file '{}': {}", full_path.display(), e),
-            }),
-        )
-    })?;
+    let content = if let Some(fc) = req.file_content {
+        fc
+    } else {
+        let full_path = root.join(&req.file_path);
+        std::fs::read_to_string(&full_path).map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    error: format!("Cannot read file '{}': {}", full_path.display(), e),
+                }),
+            )
+        })?
+    };
 
     let base_dir = req
         .file_path
@@ -482,22 +489,28 @@ pub struct LocalGtestAnalyzeRequest {
     pub build_file_path: String,
     /// Name of the GTest target to analyze.
     pub target: String,
+    /// Optional file content (used when the backend cannot access the FS).
+    pub file_content: Option<String>,
 }
 
 pub async fn local_gtest_analyze(
     Json(req): Json<LocalGtestAnalyzeRequest>,
 ) -> Result<Json<GtestAnalyzeResponse>, (StatusCode, Json<ErrorResponse>)> {
     let root = std::path::Path::new(&req.root_path);
-    let full_path = root.join(&req.build_file_path);
 
-    let content = std::fs::read_to_string(&full_path).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: format!("Cannot read file '{}': {}", full_path.display(), e),
-            }),
-        )
-    })?;
+    let content = if let Some(fc) = req.file_content {
+        fc
+    } else {
+        let full_path = root.join(&req.build_file_path);
+        std::fs::read_to_string(&full_path).map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    error: format!("Cannot read file '{}': {}", full_path.display(), e),
+                }),
+            )
+        })?
+    };
 
     let base_dir = req
         .build_file_path

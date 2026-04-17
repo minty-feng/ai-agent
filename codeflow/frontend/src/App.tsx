@@ -195,6 +195,7 @@ export default function App() {
           token={mode === 'analyze' ? analyzedToken : (browser.token || undefined)}
           selectedFile={mode === 'browse' ? browser.selectedFile : mode === 'local' ? localSelectedBuildFile : null}
           localRootPath={mode === 'local' ? local.rootPath : undefined}
+          readFile={mode === 'local' ? local.readFile : undefined}
         />
       </div>
     </div>

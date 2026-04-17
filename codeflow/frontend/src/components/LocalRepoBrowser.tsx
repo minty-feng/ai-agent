@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { LocalTreeEntry } from '../types';
 import { isBuildFile } from './FileBrowser';
 
@@ -51,6 +51,29 @@ export function LocalRepoBrowser({
   const [newExcludePath, setNewExcludePath] = useState('');
   const [newExcludeExt, setNewExcludeExt] = useState('');
 
+  // Centralized expand/collapse state
+  const allTreeDirPaths = useMemo(() => collectAllTreeDirPaths(tree), [tree]);
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(() => {
+    // Default: expand only top-level directories
+    const initial = new Set<string>();
+    for (const child of tree.children) {
+      if (child.is_dir) initial.add(child.path);
+    }
+    return initial;
+  });
+
+  const toggleExpand = (path: string) => {
+    setExpandedDirs(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const expandAll = () => setExpandedDirs(new Set(allTreeDirPaths));
+  const collapseAll = () => setExpandedDirs(new Set());
+
   const checkedCount = checkedDirs.size;
   const totalDirs = countAllDirs(tree);
 
@@ -93,14 +116,21 @@ export function LocalRepoBrowser({
             <MiniBtn onClick={onDeselectAll} title="Deselect all">✗ None</MiniBtn>
           </div>
         </div>
-        <div style={{
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }} title={rootPath}>
-          {rootPath}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1,
+          }} title={rootPath}>
+            {rootPath}
+          </div>
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 6 }}>
+            <MiniBtn onClick={expandAll} title="Expand all directories">Expand All</MiniBtn>
+            <MiniBtn onClick={collapseAll} title="Collapse all directories">Collapse All</MiniBtn>
+          </div>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
           {checkedCount} / {totalDirs} dirs selected
@@ -125,6 +155,8 @@ export function LocalRepoBrowser({
                 onToggle={onToggleDir}
                 onSelectBuildFile={onSelectBuildFile}
                 selectedBuildFile={selectedBuildFile}
+                expandedDirs={expandedDirs}
+                onToggleExpand={toggleExpand}
               />
             ) : (
               <FileRow key={child.path} entry={child} depth={0} onSelectBuildFile={onSelectBuildFile} selectedBuildFile={selectedBuildFile} />
@@ -285,6 +317,8 @@ interface DirRowProps {
   onToggle: (path: string) => void;
   onSelectBuildFile?: (path: string | null) => void;
   selectedBuildFile?: string | null;
+  expandedDirs: Set<string>;
+  onToggleExpand: (path: string) => void;
 }
 
 function isPathExcluded(path: string, excludePaths: string[]): boolean {
@@ -308,8 +342,8 @@ function getCheckState(
   return 'indeterminate';
 }
 
-function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuildFile, selectedBuildFile }: DirRowProps) {
-  const [expanded, setExpanded] = useState(depth === 0);
+function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuildFile, selectedBuildFile, expandedDirs, onToggleExpand }: DirRowProps) {
+  const expanded = expandedDirs.has(entry.path);
 
   const excluded = isPathExcluded(entry.path, exclusions.paths);
   const checkState = getCheckState(entry, checkedDirs);
@@ -339,7 +373,7 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuild
         {/* Expand/collapse */}
         <button
           type="button"
-          onClick={() => hasChildren && setExpanded(v => !v)}
+          onClick={() => hasChildren && onToggleExpand(entry.path)}
           style={{
             width: 14,
             background: 'none',
@@ -364,7 +398,7 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuild
         {/* Icon + name */}
         <span style={{ fontSize: 12 }}>📁</span>
         <span
-          onClick={() => hasChildren && setExpanded(v => !v)}
+          onClick={() => hasChildren && onToggleExpand(entry.path)}
           style={{
             fontSize: 12,
             flex: 1,
@@ -422,6 +456,8 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle, onSelectBuild
                 onToggle={onToggle}
                 onSelectBuildFile={onSelectBuildFile}
                 selectedBuildFile={selectedBuildFile}
+                expandedDirs={expandedDirs}
+                onToggleExpand={onToggleExpand}
               />
             ) : (
               <FileRow key={child.path} entry={child} depth={depth + 1} onSelectBuildFile={onSelectBuildFile} selectedBuildFile={selectedBuildFile} />
@@ -680,4 +716,15 @@ function countAllDirs(entry: LocalTreeEntry): number {
   }
   walk(entry);
   return count;
+}
+
+/** Collect all directory paths in the tree (for expand all). */
+function collectAllTreeDirPaths(entry: LocalTreeEntry): string[] {
+  const result: string[] = [];
+  function walk(e: LocalTreeEntry) {
+    if (e.is_dir && e.path !== '') result.push(e.path);
+    for (const c of e.children) walk(c);
+  }
+  walk(entry);
+  return result;
 }

@@ -13,6 +13,8 @@ interface RightPanelProps {
   selectedFile?: string | null;
   // Local-mode props
   localRootPath?: string;
+  /** Read a file's content from the local FS handle (FS handle mode only). */
+  readFile?: (relativePath: string) => Promise<string | null>;
 }
 
 type Tab = 'details' | 'security' | 'patterns' | 'builddeps' | 'gtest';
@@ -29,7 +31,7 @@ const SEV_BG: Record<string, string> = {
   low: 'rgba(136,136,170,0.08)',
 };
 
-export function RightPanel({ result, selectedNode, repo, token, selectedFile, localRootPath }: RightPanelProps) {
+export function RightPanel({ result, selectedNode, repo, token, selectedFile, localRootPath, readFile }: RightPanelProps) {
   const [tab, setTab] = useState<Tab>('details');
 
   const secCount = result?.security_issues.length ?? 0;
@@ -110,6 +112,7 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile, lo
             token={token}
             filePath={activeBuildFile}
             localRootPath={localRootPath}
+            readFile={readFile}
           />
         )}
         {tab === 'gtest' && (
@@ -118,6 +121,7 @@ export function RightPanel({ result, selectedNode, repo, token, selectedFile, lo
             token={token}
             filePath={activeBuildFile}
             localRootPath={localRootPath}
+            readFile={readFile}
           />
         )}
       </div>

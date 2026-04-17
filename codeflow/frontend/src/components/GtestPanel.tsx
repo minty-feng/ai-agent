@@ -8,9 +8,11 @@ interface GtestPanelProps {
   token?: string;
   filePath: string | null;
   localRootPath?: string;
+  /** Read a file's content from the local FS handle (FS handle mode only). */
+  readFile?: (relativePath: string) => Promise<string | null>;
 }
 
-export function GtestPanel({ repo, token, filePath, localRootPath }: GtestPanelProps) {
+export function GtestPanel({ repo, token, filePath, localRootPath, readFile }: GtestPanelProps) {
   const fileName = filePath ? filePath.split('/').pop() ?? '' : '';
   const isBuild = filePath !== null && isBuildFile(fileName);
 
@@ -48,11 +50,19 @@ export function GtestPanel({ repo, token, filePath, localRootPath }: GtestPanelP
     setFiles([]);
     setDepEdges([]);
 
-    const fetchData = localRootPath
-      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath })
-      : fetchBuildDeps({ repo, token, file_path: filePath });
+    const doFetch = async () => {
+      let fileContent: string | undefined;
+      if (readFile && localRootPath) {
+        const content = await readFile(filePath);
+        if (content !== null) fileContent = content;
+      }
 
-    fetchData
+      return localRootPath
+        ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath, file_content: fileContent })
+        : fetchBuildDeps({ repo, token, file_path: filePath });
+    };
+
+    doFetch()
       .then(data => {
         setTargetsLoading(false);
         setTestTargets(data.test_targets);
@@ -61,7 +71,7 @@ export function GtestPanel({ repo, token, filePath, localRootPath }: GtestPanelP
         setTargetsLoading(false);
         setTargetsError(e instanceof Error ? e.message : String(e));
       });
-  }, [filePath, repo, token, isBuild, localRootPath]);
+  }, [filePath, repo, token, isBuild, localRootPath, readFile]);
 
   // Run GTest analysis when target is selected
   const handleSelectTarget = (target: string) => {
@@ -73,11 +83,19 @@ export function GtestPanel({ repo, token, filePath, localRootPath }: GtestPanelP
     if (!repo && !localRootPath) return;
     setAnalysisLoading(true);
 
-    const fetchData = localRootPath
-      ? fetchLocalGtestAnalysis({ root_path: localRootPath, build_file_path: filePath, target })
-      : fetchGtestAnalysis({ repo, token, build_file_path: filePath, target });
+    const doFetch = async () => {
+      let fileContent: string | undefined;
+      if (readFile && localRootPath) {
+        const content = await readFile(filePath);
+        if (content !== null) fileContent = content;
+      }
 
-    fetchData
+      return localRootPath
+        ? fetchLocalGtestAnalysis({ root_path: localRootPath, build_file_path: filePath, target, file_content: fileContent })
+        : fetchGtestAnalysis({ repo, token, build_file_path: filePath, target });
+    };
+
+    doFetch()
       .then(data => {
         setAnalysisLoading(false);
         setFiles(data.files);

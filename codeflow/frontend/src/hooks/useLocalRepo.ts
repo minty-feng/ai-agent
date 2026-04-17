@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { LocalTreeEntry, AnalysisResult } from '../types';
 import { fetchLocalTree, analyzeLocalRepo, analyzeLocalFiles } from '../api';
-import { readTreeFromHandle, collectFilesFromHandle } from './useLocalRepoFS';
+import { readTreeFromHandle, collectFilesFromHandle, readFileFromHandle } from './useLocalRepoFS';
 
 // ---------------------------------------------------------------------------
 // Helpers to traverse the tree
@@ -104,6 +104,8 @@ export interface LocalRepoState {
   addExcludeExt: (ext: string) => void;
   removeExcludeExt: (ext: string) => void;
   analyze: () => Promise<void>;
+  /** Read a single file's content by relative path (FS handle mode only). */
+  readFile: (relativePath: string) => Promise<string | null>;
   reset: () => void;
 }
 
@@ -249,6 +251,15 @@ export function useLocalRepo(): LocalRepoState {
     }
   }, [tree, rootPath, checkedDirs, allDirPaths, exclusions]);
 
+  const readFile = useCallback(async (relativePath: string): Promise<string | null> => {
+    if (!dirHandleRef.current) return null;
+    try {
+      return await readFileFromHandle(dirHandleRef.current, relativePath);
+    } catch {
+      return null;
+    }
+  }, []);
+
   const reset = useCallback(() => {
     dirHandleRef.current = null;
     setRootPath('');
@@ -284,6 +295,7 @@ export function useLocalRepo(): LocalRepoState {
     addExcludeExt,
     removeExcludeExt,
     analyze,
+    readFile,
     reset,
   };
 }

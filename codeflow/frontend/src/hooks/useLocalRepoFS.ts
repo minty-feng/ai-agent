@@ -105,6 +105,29 @@ export async function readTreeFromHandle(
 }
 
 // ---------------------------------------------------------------------------
+// Read a single file by relative path from a FileSystemDirectoryHandle
+// ---------------------------------------------------------------------------
+
+export async function readFileFromHandle(
+  rootHandle: FileSystemDirectoryHandle,
+  relativePath: string,
+): Promise<string> {
+  const parts = relativePath.split('/').filter(Boolean);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let current: any = rootHandle;
+
+  // Navigate to the directory containing the file
+  for (let i = 0; i < parts.length - 1; i++) {
+    current = await current.getDirectoryHandle(parts[i]);
+  }
+
+  const fileName = parts[parts.length - 1];
+  const fileHandle: FileSystemFileHandle = await current.getFileHandle(fileName);
+  const file = await fileHandle.getFile();
+  return file.text();
+}
+
+// ---------------------------------------------------------------------------
 // Collect file contents from handle for analysis
 // ---------------------------------------------------------------------------
 

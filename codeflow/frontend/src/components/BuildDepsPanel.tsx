@@ -8,6 +8,8 @@ interface BuildDepsPanelProps {
   token?: string;
   filePath: string | null;
   localRootPath?: string;
+  /** Read a file's content from the local FS handle (FS handle mode only). */
+  readFile?: (relativePath: string) => Promise<string | null>;
 }
 
 const LANG_ICON: Record<string, string> = {
@@ -17,7 +19,7 @@ const LANG_ICON: Record<string, string> = {
   unknown: '📄',
 };
 
-export function BuildDepsPanel({ repo, token, filePath, localRootPath }: BuildDepsPanelProps) {
+export function BuildDepsPanel({ repo, token, filePath, localRootPath, readFile }: BuildDepsPanelProps) {
   const [state, setState] = useState<{
     targets: string[];
     files: SourceFileInfo[];
@@ -42,11 +44,20 @@ export function BuildDepsPanel({ repo, token, filePath, localRootPath }: BuildDe
     if (!repo && !localRootPath) return;
     setState(s => ({ ...s, loading: true, error: null, targets: [], files: [], selectedTarget: '' }));
 
-    const fetchData = localRootPath
-      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath })
-      : fetchBuildDeps({ repo, token, file_path: filePath });
+    const doFetch = async () => {
+      // When readFile is available (FS handle mode), read content client-side
+      let fileContent: string | undefined;
+      if (readFile && localRootPath) {
+        const content = await readFile(filePath);
+        if (content !== null) fileContent = content;
+      }
 
-    fetchData
+      return localRootPath
+        ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath, file_content: fileContent })
+        : fetchBuildDeps({ repo, token, file_path: filePath });
+    };
+
+    doFetch()
       .then(data => setState(s => ({
         ...s,
         loading: false,
@@ -59,7 +70,7 @@ export function BuildDepsPanel({ repo, token, filePath, localRootPath }: BuildDe
         loading: false,
         error: e instanceof Error ? e.message : String(e),
       })));
-  }, [filePath, repo, token, isBuild, localRootPath]);
+  }, [filePath, repo, token, isBuild, localRootPath, readFile]);
 
   // Re-fetch when target changes
   const handleTargetChange = (target: string) => {
@@ -67,11 +78,19 @@ export function BuildDepsPanel({ repo, token, filePath, localRootPath }: BuildDe
     if (!repo && !localRootPath) return;
     setState(s => ({ ...s, selectedTarget: target, loading: true, error: null, files: [] }));
 
-    const fetchData = localRootPath
-      ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath, target: target || undefined })
-      : fetchBuildDeps({ repo, token, file_path: filePath, target: target || undefined });
+    const doFetch = async () => {
+      let fileContent: string | undefined;
+      if (readFile && localRootPath) {
+        const content = await readFile(filePath);
+        if (content !== null) fileContent = content;
+      }
 
-    fetchData
+      return localRootPath
+        ? fetchLocalBuildDeps({ root_path: localRootPath, file_path: filePath, target: target || undefined, file_content: fileContent })
+        : fetchBuildDeps({ repo, token, file_path: filePath, target: target || undefined });
+    };
+
+    doFetch()
       .then(data => setState(s => ({
         ...s,
         loading: false,

@@ -47,7 +47,6 @@ export function LocalRepoBrowser({
   const [newExcludeExt, setNewExcludeExt] = useState('');
 
   const checkedCount = checkedDirs.size;
-  const dirChildren = tree.children.filter(c => c.is_dir);
   const totalDirs = countAllDirs(tree);
 
   const handleAddPath = () => {
@@ -105,9 +104,9 @@ export function LocalRepoBrowser({
 
       {/* Directory tree */}
       <div style={{ flex: 1, overflow: 'auto', padding: '6px 0' }}>
-        {dirChildren.length === 0 ? (
+        {tree.children.length === 0 ? (
           <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 12 }}>
-            No directories found.
+            No entries found.
           </div>
         ) : (
           tree.children.map(child =>
@@ -120,7 +119,9 @@ export function LocalRepoBrowser({
                 exclusions={exclusions}
                 onToggle={onToggleDir}
               />
-            ) : null,
+            ) : (
+              <FileRow key={child.path} entry={child} depth={0} />
+            ),
           )
         )}
       </div>
@@ -305,8 +306,7 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle }: DirRowProps
   const checkState = getCheckState(entry, checkedDirs);
   const isChecked = checkedDirs.has(entry.path);
 
-  const dirChildren = entry.children.filter(c => c.is_dir);
-  const hasChildren = dirChildren.length > 0;
+  const hasChildren = entry.children.length > 0;
 
   const rowColor = excluded
     ? 'var(--text-muted)'
@@ -400,20 +400,69 @@ function DirRow({ entry, depth, checkedDirs, exclusions, onToggle }: DirRowProps
       </div>
 
       {/* Children */}
-      {expanded && hasChildren && (
+      {expanded && entry.children.length > 0 && (
         <div>
-          {dirChildren.map(child => (
-            <DirRow
-              key={child.path}
-              entry={child}
-              depth={depth + 1}
-              checkedDirs={checkedDirs}
-              exclusions={exclusions}
-              onToggle={onToggle}
-            />
-          ))}
+          {entry.children.map(child =>
+            child.is_dir ? (
+              <DirRow
+                key={child.path}
+                entry={child}
+                depth={depth + 1}
+                checkedDirs={checkedDirs}
+                exclusions={exclusions}
+                onToggle={onToggle}
+              />
+            ) : (
+              <FileRow key={child.path} entry={child} depth={depth + 1} />
+            ),
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FileRow – a single file leaf node (read-only, no checkbox)
+// ---------------------------------------------------------------------------
+
+function fileIcon(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower === 'build.bazel' || lower === 'build' || lower.endsWith('.bzl')) return '🔧';
+  if (lower === 'cmakelists.txt' || lower.endsWith('.cmake')) return '🔧';
+  if (lower === 'makefile' || lower === 'gnumakefile') return '🔧';
+  if (lower.endsWith('.json') || lower.endsWith('.yaml') || lower.endsWith('.yml') || lower.endsWith('.toml')) return '⚙️';
+  if (lower.endsWith('.md') || lower.endsWith('.txt') || lower.endsWith('.rst')) return '📝';
+  return '📄';
+}
+
+function FileRow({ entry, depth }: { entry: LocalTreeEntry; depth: number }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: `2px 8px 2px ${8 + depth * 14 + 14 + 4}px`, // align with dir names (skip expand btn width)
+      }}
+      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)')}
+      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = '')}
+    >
+      <span style={{ fontSize: 11 }}>{fileIcon(entry.name)}</span>
+      <span
+        style={{
+          fontSize: 12,
+          flex: 1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          color: 'var(--text-muted)',
+          userSelect: 'none',
+        }}
+        title={entry.path}
+      >
+        {entry.name}
+      </span>
     </div>
   );
 }

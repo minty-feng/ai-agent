@@ -4,38 +4,38 @@ export type AppMode = 'analyze' | 'browse' | 'local';
 
 interface TopBarProps {
   onAnalyze: (repo: string, token?: string) => void;
-  onBrowse: (repo: string, token?: string) => void;
-  onLoadLocal: (path: string) => void;
-  onModeChange: (mode: AppMode) => void;
+  onOpenFolder: (path: string) => void;
+  onRefresh: () => void;
+  onReset: () => void;
   loading: boolean;
   mode: AppMode;
+  hasData: boolean;
 }
 
-export function TopBar({ onAnalyze, onBrowse, onLoadLocal, onModeChange, loading, mode }: TopBarProps) {
+export function TopBar({ onAnalyze, onOpenFolder, onRefresh, onReset, loading, mode, hasData }: TopBarProps) {
   const [repo, setRepo] = useState('');
+  const [authMethod, setAuthMethod] = useState<'none' | 'pat'>('none');
   const [token, setToken] = useState('');
-  const [localPath, setLocalPath] = useState('');
-  const [showToken, setShowToken] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'local') {
-      if (!localPath.trim()) return;
-      onLoadLocal(localPath.trim());
-    } else if (mode === 'browse') {
-      if (!repo.trim()) return;
-      onBrowse(repo.trim(), token.trim() || undefined);
-    } else {
-      if (!repo.trim()) return;
-      onAnalyze(repo.trim(), token.trim() || undefined);
+    if (!repo.trim() || loading) return;
+    onAnalyze(repo.trim(), authMethod === 'pat' && token.trim() ? token.trim() : undefined);
+  };
+
+  const handleOpenFolder = () => {
+    if (loading) return;
+    const path = prompt('Enter the absolute path to a local repository:');
+    if (path && path.trim()) {
+      onOpenFolder(path.trim());
     }
   };
 
-  const isDisabled = loading || (mode === 'local' ? !localPath.trim() : !repo.trim());
+  const analyzeDisabled = loading || !repo.trim();
 
   return (
     <header style={{
-      height: 56,
+      height: 48,
       background: 'var(--bg-panel)',
       borderBottom: '1px solid var(--border)',
       display: 'flex',
@@ -49,147 +49,186 @@ export function TopBar({ onAnalyze, onBrowse, onLoadLocal, onModeChange, loading
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        marginRight: 8,
-        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        cursor: 'pointer',
       }}>
-        <span style={{ fontSize: 20 }}>⚡</span>
-        <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 15, letterSpacing: 1 }}>
-          CodeFlow
+        <div style={{
+          width: 28,
+          height: 28,
+          background: 'linear-gradient(135deg, var(--accent), var(--blue))',
+          borderRadius: 6,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 14,
+        }}>
+          ⚡
+        </div>
+        <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 14, letterSpacing: 1 }}>
+          CODEFLOW
         </span>
       </div>
 
-      {/* Mode tabs */}
-      <div style={{ display: 'flex', gap: 0, background: 'var(--bg-surface)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-        {(['analyze', 'browse', 'local'] as AppMode[]).map(m => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onModeChange(m)}
-            style={{
-              padding: '5px 14px',
-              background: mode === m ? 'var(--accent-glow)' : 'none',
-              border: 'none',
-              borderBottom: mode === m ? '2px solid var(--accent)' : '2px solid transparent',
-              color: mode === m ? 'var(--accent)' : 'var(--text-secondary)',
-              fontSize: 11,
-              fontWeight: mode === m ? 700 : 400,
-              letterSpacing: 0.5,
-              transition: 'all 0.15s',
-              cursor: 'pointer',
-            }}
-          >
-            {m === 'analyze' ? '⚡ Analyze' : m === 'browse' ? '🗂 Browse' : '💻 Local'}
-          </button>
-        ))}
-      </div>
+      {/* Repo input */}
+      <form onSubmit={handleAnalyze} style={{ display: 'flex', flex: 1, gap: 8, alignItems: 'center', maxWidth: 600 }}>
+        <input
+          value={repo}
+          onChange={e => setRepo(e.target.value)}
+          placeholder="owner/repo or GitHub URL"
+          style={{
+            flex: 1,
+            background: 'var(--bg-base)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            color: 'var(--text-primary)',
+            padding: '6px 12px',
+            outline: 'none',
+            fontSize: 11,
+            fontFamily: 'inherit',
+          }}
+          onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+        />
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flex: 1, gap: 8, alignItems: 'center' }}>
-        {mode === 'local' ? (
-          /* Local path input */
+        {/* Auth selector */}
+        <select
+          value={authMethod}
+          onChange={e => setAuthMethod(e.target.value as 'none' | 'pat')}
+          style={{
+            padding: '6px 28px 6px 10px',
+            background: 'var(--bg-base)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            color: 'var(--text-primary)',
+            fontFamily: 'inherit',
+            fontSize: 10,
+            cursor: 'pointer',
+            minWidth: 100,
+            appearance: 'none',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888aa' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 8px center',
+          }}
+        >
+          <option value="none">No Auth</option>
+          <option value="pat">Token (PAT)</option>
+        </select>
+
+        {/* Token input (only shown when PAT selected) */}
+        {authMethod === 'pat' && (
           <input
-            value={localPath}
-            onChange={e => setLocalPath(e.target.value)}
-            placeholder="/absolute/path/to/local/repo"
+            type="password"
+            value={token}
+            onChange={e => setToken(e.target.value)}
+            placeholder="GitHub token"
             style={{
-              flex: 1,
-              background: 'var(--bg-surface)',
+              width: 160,
+              background: 'var(--bg-base)',
               border: '1px solid var(--border)',
               borderRadius: 6,
               color: 'var(--text-primary)',
-              padding: '7px 12px',
+              padding: '6px 12px',
               outline: 'none',
-              fontSize: 13,
-              fontFamily: 'monospace',
+              fontSize: 11,
+              fontFamily: 'inherit',
             }}
             onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border)')}
           />
-        ) : (
-          /* GitHub repo input + token */
-          <>
-            <input
-              value={repo}
-              onChange={e => setRepo(e.target.value)}
-              placeholder="owner/repo or https://github.com/owner/repo"
-              style={{
-                flex: 1,
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                color: 'var(--text-primary)',
-                padding: '7px 12px',
-                outline: 'none',
-                fontSize: 13,
-              }}
-              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-            />
-
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input
-                type={showToken ? 'text' : 'password'}
-                value={token}
-                onChange={e => setToken(e.target.value)}
-                placeholder="GitHub token (optional)"
-                style={{
-                  width: 220,
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 6,
-                  color: 'var(--text-primary)',
-                  padding: '7px 32px 7px 12px',
-                  outline: 'none',
-                  fontSize: 13,
-                }}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowToken(v => !v)}
-                style={{
-                  position: 'absolute',
-                  right: 8,
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  fontSize: 14,
-                  padding: 0,
-                  cursor: 'pointer',
-                }}
-              >
-                {showToken ? '🙈' : '👁'}
-              </button>
-            </div>
-          </>
         )}
 
+        {/* Analyze button */}
         <button
           type="submit"
-          disabled={isDisabled}
+          disabled={analyzeDisabled}
           style={{
-            background: isDisabled ? 'var(--bg-surface)' : 'var(--accent)',
-            color: isDisabled ? 'var(--text-muted)' : '#000',
-            border: 'none',
+            padding: '6px 12px',
+            background: analyzeDisabled ? 'var(--bg-surface)' : 'var(--accent)',
+            color: analyzeDisabled ? 'var(--text-muted)' : 'var(--bg-base)',
+            border: analyzeDisabled ? '1px solid var(--border)' : '1px solid var(--accent)',
             borderRadius: 6,
-            padding: '7px 20px',
+            fontFamily: 'inherit',
+            fontSize: 10,
             fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: 0.5,
-            transition: 'all 0.2s',
+            cursor: analyzeDisabled ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
             whiteSpace: 'nowrap',
-            cursor: isDisabled ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Spinner /> {mode === 'browse' ? 'Loading…' : mode === 'local' ? 'Loading…' : 'Analyzing…'}
-            </span>
-          ) : mode === 'browse' ? '🗂 Browse' : mode === 'local' ? '📂 Load' : '⚡ Analyze'}
+          {loading && mode === 'analyze' ? (
+            <><Spinner /> Analyzing…</>
+          ) : (
+            '🔍 Analyze'
+          )}
         </button>
       </form>
+
+      {/* Open Folder button */}
+      <TopBarButton
+        onClick={handleOpenFolder}
+        disabled={loading}
+        active={loading && mode === 'local'}
+      >
+        {loading && mode === 'local' ? (
+          <><Spinner /> Loading…</>
+        ) : (
+          '📁 Open Folder'
+        )}
+      </TopBarButton>
+
+      {/* Refresh button */}
+      {hasData && (
+        <TopBarButton onClick={onRefresh} disabled={loading}>
+          <span style={{ fontSize: 12 }}>↻</span> Refresh
+        </TopBarButton>
+      )}
+
+      {/* Reset button */}
+      {hasData && (
+        <TopBarButton onClick={onReset} disabled={loading}>
+          <span style={{ fontSize: 12 }}>✕</span> Reset
+        </TopBarButton>
+      )}
     </header>
+  );
+}
+
+function TopBarButton({ children, onClick, disabled, active }: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '6px 12px',
+        background: active ? 'var(--accent-glow)' : 'var(--bg-surface)',
+        border: `1px solid ${hovered && !disabled ? 'var(--accent)' : 'var(--border)'}`,
+        borderRadius: 6,
+        color: hovered && !disabled ? 'var(--accent)' : 'var(--text-primary)',
+        fontFamily: 'inherit',
+        fontSize: 10,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        whiteSpace: 'nowrap',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'all 0.15s',
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

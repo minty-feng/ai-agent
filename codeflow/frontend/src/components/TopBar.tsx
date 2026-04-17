@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
 
-export type AppMode = 'analyze' | 'browse';
+export type AppMode = 'analyze' | 'browse' | 'local';
 
 interface TopBarProps {
   onAnalyze: (repo: string, token?: string) => void;
   onBrowse: (repo: string, token?: string) => void;
+  onLoadLocal: (path: string) => void;
   onModeChange: (mode: AppMode) => void;
   loading: boolean;
   mode: AppMode;
 }
 
-export function TopBar({ onAnalyze, onBrowse, onModeChange, loading, mode }: TopBarProps) {
+export function TopBar({ onAnalyze, onBrowse, onLoadLocal, onModeChange, loading, mode }: TopBarProps) {
   const [repo, setRepo] = useState('');
   const [token, setToken] = useState('');
+  const [localPath, setLocalPath] = useState('');
   const [showToken, setShowToken] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repo.trim()) return;
-    if (mode === 'browse') {
+    if (mode === 'local') {
+      if (!localPath.trim()) return;
+      onLoadLocal(localPath.trim());
+    } else if (mode === 'browse') {
+      if (!repo.trim()) return;
       onBrowse(repo.trim(), token.trim() || undefined);
     } else {
+      if (!repo.trim()) return;
       onAnalyze(repo.trim(), token.trim() || undefined);
     }
   };
+
+  const isDisabled = loading || (mode === 'local' ? !localPath.trim() : !repo.trim());
 
   return (
     <header style={{
@@ -52,7 +60,7 @@ export function TopBar({ onAnalyze, onBrowse, onModeChange, loading, mode }: Top
 
       {/* Mode tabs */}
       <div style={{ display: 'flex', gap: 0, background: 'var(--bg-surface)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-        {(['analyze', 'browse'] as AppMode[]).map(m => (
+        {(['analyze', 'browse', 'local'] as AppMode[]).map(m => (
           <button
             key={m}
             type="button"
@@ -67,75 +75,102 @@ export function TopBar({ onAnalyze, onBrowse, onModeChange, loading, mode }: Top
               fontWeight: mode === m ? 700 : 400,
               letterSpacing: 0.5,
               transition: 'all 0.15s',
+              cursor: 'pointer',
             }}
           >
-            {m === 'analyze' ? '⚡ Analyze' : '🗂 Browse'}
+            {m === 'analyze' ? '⚡ Analyze' : m === 'browse' ? '🗂 Browse' : '💻 Local'}
           </button>
         ))}
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flex: 1, gap: 8, alignItems: 'center' }}>
-        <input
-          value={repo}
-          onChange={e => setRepo(e.target.value)}
-          placeholder="owner/repo or https://github.com/owner/repo"
-          style={{
-            flex: 1,
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            color: 'var(--text-primary)',
-            padding: '7px 12px',
-            outline: 'none',
-            fontSize: 13,
-          }}
-          onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-        />
-
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        {mode === 'local' ? (
+          /* Local path input */
           <input
-            type={showToken ? 'text' : 'password'}
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            placeholder="GitHub token (optional)"
+            value={localPath}
+            onChange={e => setLocalPath(e.target.value)}
+            placeholder="/absolute/path/to/local/repo"
             style={{
-              width: 220,
+              flex: 1,
               background: 'var(--bg-surface)',
               border: '1px solid var(--border)',
               borderRadius: 6,
               color: 'var(--text-primary)',
-              padding: '7px 32px 7px 12px',
+              padding: '7px 12px',
               outline: 'none',
               fontSize: 13,
+              fontFamily: 'monospace',
             }}
             onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border)')}
           />
-          <button
-            type="button"
-            onClick={() => setShowToken(v => !v)}
-            style={{
-              position: 'absolute',
-              right: 8,
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: 14,
-              padding: 0,
-            }}
-          >
-            {showToken ? '🙈' : '👁'}
-          </button>
-        </div>
+        ) : (
+          /* GitHub repo input + token */
+          <>
+            <input
+              value={repo}
+              onChange={e => setRepo(e.target.value)}
+              placeholder="owner/repo or https://github.com/owner/repo"
+              style={{
+                flex: 1,
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                color: 'var(--text-primary)',
+                padding: '7px 12px',
+                outline: 'none',
+                fontSize: 13,
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+            />
+
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type={showToken ? 'text' : 'password'}
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder="GitHub token (optional)"
+                style={{
+                  width: 220,
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  color: 'var(--text-primary)',
+                  padding: '7px 32px 7px 12px',
+                  outline: 'none',
+                  fontSize: 13,
+                }}
+                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(v => !v)}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: 14,
+                  padding: 0,
+                  cursor: 'pointer',
+                }}
+              >
+                {showToken ? '🙈' : '👁'}
+              </button>
+            </div>
+          </>
+        )}
 
         <button
           type="submit"
-          disabled={loading || !repo.trim()}
+          disabled={isDisabled}
           style={{
-            background: loading ? 'var(--bg-surface)' : 'var(--accent)',
-            color: loading ? 'var(--text-muted)' : '#000',
+            background: isDisabled ? 'var(--bg-surface)' : 'var(--accent)',
+            color: isDisabled ? 'var(--text-muted)' : '#000',
             border: 'none',
             borderRadius: 6,
             padding: '7px 20px',
@@ -144,13 +179,14 @@ export function TopBar({ onAnalyze, onBrowse, onModeChange, loading, mode }: Top
             letterSpacing: 0.5,
             transition: 'all 0.2s',
             whiteSpace: 'nowrap',
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
           }}
         >
           {loading ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Spinner /> {mode === 'browse' ? 'Loading…' : 'Analyzing…'}
+              <Spinner /> {mode === 'browse' ? 'Loading…' : mode === 'local' ? 'Loading…' : 'Analyzing…'}
             </span>
-          ) : mode === 'browse' ? '🗂 Browse' : '⚡ Analyze'}
+          ) : mode === 'browse' ? '🗂 Browse' : mode === 'local' ? '📂 Load' : '⚡ Analyze'}
         </button>
       </form>
     </header>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { SourceFileInfo, BuildDepsResponse } from '../types';
+import type { SourceFileInfo } from '../types';
 import { fetchBuildDeps } from '../api';
 import { isBuildFile } from './FileBrowser';
 

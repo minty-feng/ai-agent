@@ -5,6 +5,7 @@ mod api;
 mod analyzer;
 mod build_parser;
 mod github;
+mod local;
 
 #[tokio::main]
 async fn main() {
@@ -21,6 +22,8 @@ async fn main() {
         .route("/api/tree/{owner}/{repo}", get(api::get_tree))
         .route("/api/file/{owner}/{repo}", get(api::get_file))
         .route("/api/build-deps", post(api::get_build_deps))
+        .route("/api/local/tree", post(api::local_tree))
+        .route("/api/local/analyze", post(api::local_analyze))
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();

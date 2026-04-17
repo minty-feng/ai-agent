@@ -1,4 +1,4 @@
-import type { AnalyzeRequest, AnalysisResult, DirEntry, BuildDepsRequest, BuildDepsResponse } from '../types';
+import type { AnalyzeRequest, AnalysisResult, DirEntry, BuildDepsRequest, BuildDepsResponse, LocalTreeEntry, LocalAnalyzeRequest } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -46,4 +46,22 @@ export async function fetchBuildDeps(req: BuildDepsRequest): Promise<BuildDepsRe
     body: JSON.stringify(req),
   });
   return handleResponse<BuildDepsResponse>(res);
+}
+
+export async function fetchLocalTree(path: string): Promise<LocalTreeEntry> {
+  const res = await fetch(`${API_BASE}/api/local/tree`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+  return handleResponse<LocalTreeEntry>(res);
+}
+
+export async function analyzeLocalRepo(req: LocalAnalyzeRequest): Promise<AnalysisResult> {
+  const res = await fetch(`${API_BASE}/api/local/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<AnalysisResult>(res);
 }

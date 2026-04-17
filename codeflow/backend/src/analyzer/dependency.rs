@@ -2,10 +2,11 @@ use regex::Regex;
 use crate::github::FileInfo;
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct Dependency {
+    #[allow(dead_code)]
     pub raw: String,
     pub resolved: Option<String>,
+    #[allow(dead_code)]
     pub is_external: bool,
 }
 

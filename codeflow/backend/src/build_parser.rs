@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 use std::sync::OnceLock;
 use regex::Regex;
 
@@ -271,7 +272,9 @@ fn expand_var(arg: &str, variables: &HashMap<String, Vec<String>>) -> Vec<String
 fn is_source_file(path: &str) -> bool {
     matches!(
         path.split('.').last(),
-        Some("cpp") | Some("cc") | Some("cxx") | Some("c") | Some("py") | Some("h") | Some("hpp")
+        Some("cpp") | Some("cc") | Some("cxx") | Some("c")
+        | Some("py") | Some("h") | Some("hpp") | Some("hh") | Some("hxx")
+        | Some("proto") | Some("java") | Some("go") | Some("rs") | Some("sh")
     )
 }
 
@@ -323,45 +326,286 @@ fn parse_target_command(
 // ---------------------------------------------------------------------------
 
 /// Parse a Bazel BUILD or BUILD.bazel file, returning targets with their srcs.
+///
+/// Uses balanced-paren extraction so that nested calls such as `glob()` and
+/// `select()` inside rule bodies are handled correctly, and **any** rule type
+/// with a `name = "…"` attribute is recognised – not just a fixed set.
 pub fn parse_bazel(content: &str, base_dir: &str) -> Vec<ParsedTarget> {
+    let cleaned = strip_bazel_comments(content);
+    let chars: Vec<char> = cleaned.chars().collect();
+    let len = chars.len();
+    let mut pos = 0;
     let mut targets = Vec::new();
 
-    // Match common C++/Python rule blocks – capture everything up to the next
-    // rule keyword at depth 0.  We use a lazy (?s) dot-all match up to the
-    // closing paren of the rule.
-    let rule_re = Regex::new(
-        r"(?s)\b(cc_binary|cc_library|cc_test|cc_proto_library|py_binary|py_library|py_test)\s*\(([^)]*(?:\([^)]*\)[^)]*)*)\)",
-    )
-    .expect("valid regex");
+    while pos < len {
+        // Advance past non-identifier characters (skip stray strings too).
+        pos = skip_non_ident(&chars, pos);
+        if pos >= len {
+            break;
+        }
 
-    for cap in rule_re.captures_iter(content) {
-        let rule_type = &cap[1];
-        let body = &cap[2];
-        let is_test = rule_type == "cc_test" || rule_type == "py_test";
+        // Read identifier (e.g. "cc_library", "proto_library", "load", …)
+        let (ident, next) = read_ident(&chars, pos);
+        pos = next;
 
-        // name = "target_name"
-        let name_re = Regex::new(r#"name\s*=\s*"([^"]+)""#).expect("valid regex");
-        let name = match name_re.captures(body) {
-            Some(c) => c[1].to_string(),
-            None => continue,
+        // Skip whitespace between identifier and potential '('
+        pos = skip_ws(&chars, pos);
+
+        // Must be followed by '(' to be a call.
+        if pos >= len || chars[pos] != '(' {
+            continue;
+        }
+
+        // Extract the balanced body between '(' and its matching ')'.
+        let body_start = pos + 1;
+        let close = find_matching_close_paren(&chars, pos);
+        if close >= len {
+            break; // unmatched – stop
+        }
+        let body: String = chars[body_start..close].iter().collect();
+        pos = close + 1;
+
+        // Skip well-known non-target top-level functions.
+        match ident.as_str() {
+            "load" | "package" | "exports_files" | "licenses" | "workspace"
+            | "register_toolchains" | "register_execution_platforms" => continue,
+            _ => {}
+        }
+
+        // A target must have `name = "…"`.
+        let name = match extract_bazel_string_attr(&body, "name") {
+            Some(n) if !n.is_empty() => n,
+            _ => continue,
         };
 
-        // srcs = ["file.cc", "file.py", ...]  or srcs = glob([...])
-        let srcs_re = Regex::new(r#"srcs\s*=\s*\[([^\]]*)\]"#).expect("valid regex");
-        let mut sources = Vec::new();
-        if let Some(srcs_cap) = srcs_re.captures(body) {
-            let srcs_content = &srcs_cap[1];
-            let file_re = Regex::new(r#""([^":@]+)""#).expect("valid regex");
-            for file_cap in file_re.captures_iter(srcs_content) {
-                let file = file_cap[1].trim();
-                if is_source_file(file) {
-                    sources.push(resolve_rel_path(file, base_dir));
-                }
-            }
-        }
+        let is_test = is_bazel_test_rule(&ident, &name);
+
+        // Collect source file paths from `srcs` and `hdrs`.
+        let mut sources = extract_bazel_file_list(&body, "srcs", base_dir);
+        sources.extend(extract_bazel_file_list(&body, "hdrs", base_dir));
 
         targets.push(ParsedTarget { name, sources, is_test });
     }
 
     targets
+}
+
+// ---------------------------------------------------------------------------
+// Bazel helpers
+// ---------------------------------------------------------------------------
+
+fn is_ident_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
+}
+
+/// Advance past characters that are not the start of an identifier.
+fn skip_non_ident(chars: &[char], mut pos: usize) -> usize {
+    let len = chars.len();
+    while pos < len && !is_ident_char(chars[pos]) {
+        match chars[pos] {
+            '"' => pos = skip_string_lit(chars, pos, '"'),
+            '\'' => pos = skip_string_lit(chars, pos, '\''),
+            _ => pos += 1,
+        }
+    }
+    pos
+}
+
+/// Read a contiguous identifier starting at `pos`. Returns `(identifier, next_pos)`.
+fn read_ident(chars: &[char], pos: usize) -> (String, usize) {
+    let len = chars.len();
+    let mut end = pos;
+    while end < len && is_ident_char(chars[end]) {
+        end += 1;
+    }
+    (chars[pos..end].iter().collect(), end)
+}
+
+/// Skip ASCII whitespace.
+fn skip_ws(chars: &[char], mut pos: usize) -> usize {
+    let len = chars.len();
+    while pos < len && chars[pos].is_ascii_whitespace() {
+        pos += 1;
+    }
+    pos
+}
+
+/// Skip a string literal starting at `pos` (which should be the opening quote).
+/// Returns the position **after** the closing quote.
+fn skip_string_lit(chars: &[char], pos: usize, quote: char) -> usize {
+    let len = chars.len();
+    let mut i = pos + 1;
+    while i < len && chars[i] != quote {
+        if chars[i] == '\\' {
+            i += 1; // skip the escaped character
+        }
+        i += 1;
+    }
+    if i < len { i + 1 } else { i }
+}
+
+/// Find the position of the ')' that matches the '(' at `pos`, handling
+/// nested parens and string literals.
+fn find_matching_close_paren(chars: &[char], start: usize) -> usize {
+    let len = chars.len();
+    let mut i = start + 1; // skip opening '('
+    let mut depth: usize = 1;
+    while i < len && depth > 0 {
+        match chars[i] {
+            '(' => { depth += 1; i += 1; }
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return i;
+                }
+                i += 1;
+            }
+            '"' => i = skip_string_lit(chars, i, '"'),
+            '\'' => i = skip_string_lit(chars, i, '\''),
+            _ => i += 1,
+        }
+    }
+    i // past end if unmatched
+}
+
+/// Strip `#`-style line comments from Bazel/Starlark source (respecting
+/// quoted strings).
+fn strip_bazel_comments(content: &str) -> String {
+    let mut result = String::with_capacity(content.len());
+    for line in content.lines() {
+        let mut in_double = false;
+        let mut in_single = false;
+        let mut end = line.len();
+        let mut prev = '\0';
+        for (i, c) in line.char_indices() {
+            if in_double {
+                if c == '"' && prev != '\\' { in_double = false; }
+            } else if in_single {
+                if c == '\'' && prev != '\\' { in_single = false; }
+            } else {
+                match c {
+                    '#' => { end = i; break; }
+                    '"' => in_double = true,
+                    '\'' => in_single = true,
+                    _ => {}
+                }
+            }
+            prev = c;
+        }
+        result.push_str(&line[..end]);
+        result.push('\n');
+    }
+    result
+}
+
+/// Extract the value of a `name = "value"` style string attribute from a
+/// Bazel rule body.
+fn extract_bazel_string_attr(body: &str, attr: &str) -> Option<String> {
+    let re = Regex::new(&format!(r#"\b{}\s*=\s*"([^"]+)""#, regex::escape(attr))).ok()?;
+    re.captures(body).map(|c| c[1].to_string())
+}
+
+/// Extract source-file paths from a list-valued attribute (`srcs`, `hdrs`).
+///
+/// Handles `attr = ["f1", "f2"]`, `attr = glob(["*.cc"])`, and mixed
+/// expressions.  Bazel labels (`//…`, `@…`, `:…`) and glob wildcards
+/// (`*`, `?`) are skipped.
+fn extract_bazel_file_list(body: &str, attr: &str, base_dir: &str) -> Vec<String> {
+    let attr_re = match Regex::new(&format!(r"\b{}\s*=", regex::escape(attr))) {
+        Ok(r) => r,
+        Err(_) => return vec![],
+    };
+    let start = match attr_re.find(body) {
+        Some(m) => m.end(),
+        None => return vec![],
+    };
+
+    // Determine the extent of the value: up to the next top-level attribute
+    // assignment (`\n  identifier =`) or end of body.
+    let rest = &body[start..];
+    let end_re = Regex::new(r"(?m)^\s*[a-zA-Z_]\w*\s*=").expect("valid regex");
+    let value_str = match end_re.find(rest) {
+        Some(m) => &rest[..m.start()],
+        None => rest,
+    };
+
+    let file_re = Regex::new(r#""([^"]+)""#).expect("valid regex");
+    let mut sources = Vec::new();
+    for cap in file_re.captures_iter(value_str) {
+        let file = cap[1].trim();
+        // Skip Bazel labels and glob wildcards
+        if file.starts_with("//") || file.starts_with('@') || file.starts_with(':') {
+            continue;
+        }
+        if file.contains('*') || file.contains('?') {
+            continue;
+        }
+        if is_source_file(file) {
+            sources.push(resolve_rel_path(file, base_dir));
+        }
+    }
+    sources
+}
+
+/// Determine whether a Bazel rule is a test target.
+fn is_bazel_test_rule(rule_type: &str, name: &str) -> bool {
+    let lower_rule = rule_type.to_lowercase();
+    let lower_name = name.to_lowercase();
+    lower_rule.ends_with("_test")
+        || lower_rule == "test_suite"
+        || lower_name.ends_with("_test")
+        || lower_name.ends_with("_tests")
+        || lower_name.starts_with("test_")
+}
+
+// ---------------------------------------------------------------------------
+// Upward include search (for local dependency resolution)
+// ---------------------------------------------------------------------------
+
+/// Search for a file by first looking in `start_dir` (relative to `root`),
+/// then progressively moving to parent directories up to (and including)
+/// `root`.  Returns the repo-relative path (forward-slash separated) if found.
+///
+/// Both the full `include_path` and its basename are tried at each level so
+/// that `#include "sub/foo.h"` can be resolved even when the directory
+/// structure doesn't match exactly.
+pub fn find_include_upward(root: &Path, start_dir: &str, include_path: &str) -> Option<String> {
+    let mut current = if start_dir.is_empty() {
+        root.to_path_buf()
+    } else {
+        root.join(start_dir)
+    };
+
+    let basename = include_path.rsplit('/').next().unwrap_or(include_path);
+
+    loop {
+        // Try the include path as given (e.g. "sub/foo.h")
+        let candidate = current.join(include_path);
+        if candidate.is_file() {
+            if let Ok(rel) = candidate.strip_prefix(root) {
+                return Some(rel.to_string_lossy().replace('\\', "/"));
+            }
+        }
+
+        // Also try just the basename (e.g. "foo.h")
+        if basename != include_path {
+            let candidate = current.join(basename);
+            if candidate.is_file() {
+                if let Ok(rel) = candidate.strip_prefix(root) {
+                    return Some(rel.to_string_lossy().replace('\\', "/"));
+                }
+            }
+        }
+
+        // Move to parent directory, stop when we've reached the root
+        if current == root.to_path_buf() {
+            break;
+        }
+        current = match current.parent() {
+            Some(p) if p.starts_with(root) || p == root => p.to_path_buf(),
+            _ => break,
+        };
+    }
+
+    None
 }

@@ -2,6 +2,7 @@ use regex::Regex;
 use crate::github::FileInfo;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Dependency {
     pub raw: String,
     pub resolved: Option<String>,
@@ -196,7 +197,7 @@ fn extract_rust_deps(content: &str, file_path: &str, all_paths: &[String]) -> Ve
     deps
 }
 
-fn extract_java_deps(content: &str, file_path: &str, all_paths: &[String]) -> Vec<Dependency> {
+fn extract_java_deps(content: &str, _file_path: &str, all_paths: &[String]) -> Vec<Dependency> {
     let pat = Regex::new(r#"(?m)^import\s+([\w\.]+);"#).unwrap();
     let mut deps = Vec::new();
     let mut seen = std::collections::HashSet::new();

@@ -6,3 +6,6 @@ node_modules/
 .venv/
 *.egg-info/
 girlfriend-daily-reco/data.db
+tianya-posts/backend/data.db
+tianya-posts/backend/uploads/*.pdf
+.next/

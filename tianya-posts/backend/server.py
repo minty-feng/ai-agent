@@ -256,27 +256,25 @@ async def create_or_update_post(
         if not existing:
             conn.close()
             raise HTTPException(404, "Post not found")
-        updates = {
-            "title": title,
-            "author": author,
-            "category": category,
-            "description": description,
-            "cover_color": cover_color,
-            "is_featured": is_featured,
-            "updated_at": now,
-        }
         if pdf_file:
             # Delete old PDF
             if existing["pdf_file"]:
                 old_path = UPLOAD_DIR / existing["pdf_file"]
                 if old_path.exists():
                     old_path.unlink()
-            updates["pdf_file"] = pdf_file
-        set_clause = ", ".join(f"{k} = :{k}" for k in updates)
-        conn.execute(
-            f"UPDATE posts SET {set_clause} WHERE id = :id",  # noqa: S608
-            {**updates, "id": id},
-        )
+            conn.execute(
+                """UPDATE posts SET title=?, author=?, category=?, description=?,
+                   cover_color=?, is_featured=?, pdf_file=?, updated_at=?
+                   WHERE id=?""",
+                (title, author, category, description, cover_color, is_featured, pdf_file, now, id),
+            )
+        else:
+            conn.execute(
+                """UPDATE posts SET title=?, author=?, category=?, description=?,
+                   cover_color=?, is_featured=?, updated_at=?
+                   WHERE id=?""",
+                (title, author, category, description, cover_color, is_featured, now, id),
+            )
         conn.commit()
         row = conn.execute("SELECT * FROM posts WHERE id = ?", (id,)).fetchone()
     else:

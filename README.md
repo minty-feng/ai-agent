@@ -55,3 +55,7 @@ An elegant dark-themed web app showcasing Zhang Zai's (张载) four timeless Con
 ### [girlfriend-daily-reco](girlfriend-daily-reco/)
 
 Modern recommendation workspace for solving the daily "what to wear" and "what to eat" decision loop. Built with a Python 3.12 + SQLite backend and a polished browser UI, it supports creating, editing, and deleting outfit/meal assets, generating recommendations from weather, mood, occasion, diet, and budget, auto-detecting live weather from geolocation, producing next-day plans, exporting results, sending them by email (backend SMTP or mailto), generating shareable links, downloading high-resolution image cards, and storing recommendation history for later review.
+
+### [tianya-posts](tianya-posts/)
+
+Classic Tianya Forum posts collection (天涯神贴) — curating legendary posts from China's iconic Tianya forum, spanning economic predictions, historical analysis, life reflections, supernatural stories, and more. Features a warm vintage parchment-themed frontend for reading, with an admin backend for managing posts and uploading PDF source materials. Built with Next.js 16, React 19, TypeScript, Tailwind CSS 4 (frontend) and Python FastAPI + SQLite (backend).

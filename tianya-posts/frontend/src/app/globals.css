@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-parchment-50: #faf8f3;
+  --color-parchment-100: #f5f0e8;
+  --color-parchment-200: #ede4d4;
+  --color-parchment-300: #ddd0b8;
+  --color-parchment-400: #c9b896;
+  --color-parchment-500: #b5a07a;
+  --color-brown-50: #f9f5f0;
+  --color-brown-100: #e8ddd0;
+  --color-brown-200: #d4c4a8;
+  --color-brown-300: #b89e70;
+  --color-brown-400: #9a7d4e;
+  --color-brown-500: #7a5c2e;
+  --color-brown-600: #5e4420;
+  --color-brown-700: #3d2b1f;
+  --color-brown-800: #2a1d14;
+  --color-brown-900: #1a100a;
+  --color-vermilion-50: #fef2f0;
+  --color-vermilion-100: #fce0db;
+  --color-vermilion-200: #f5b5aa;
+  --color-vermilion-300: #e07860;
+  --color-vermilion-400: #c44e30;
+  --color-vermilion-500: #a0321a;
+  --color-vermilion-600: #8b2500;
+  --color-vermilion-700: #6b1c00;
+  --color-accent: #8b2500;
+  --color-accent-light: #c44e30;
+  --font-serif: "Noto Serif SC", "Noto Serif", "Georgia", ui-serif, serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-parchment-50);
+  color: var(--color-brown-700);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-parchment-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brown-300);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-vermilion-500);
+}
+
+/* Paper card effect */
+.paper-card {
+  background: linear-gradient(135deg, #fffdf8 0%, #faf5ec 100%);
+  border: 1px solid rgba(185, 160, 120, 0.25);
+  box-shadow:
+    0 1px 3px rgba(122, 92, 46, 0.06),
+    0 4px 12px rgba(122, 92, 46, 0.04);
+  transition: all 0.3s ease;
+}
+.paper-card:hover {
+  box-shadow:
+    0 2px 8px rgba(122, 92, 46, 0.1),
+    0 8px 24px rgba(122, 92, 46, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Featured badge */
+.featured-badge {
+  background: linear-gradient(135deg, #c44e30, #8b2500);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Category pill */
+.category-pill {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  border: 1px solid rgba(185, 160, 120, 0.35);
+  background: rgba(245, 240, 232, 0.7);
+  color: var(--color-brown-500);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.category-pill:hover,
+.category-pill.active {
+  background: var(--color-vermilion-600);
+  color: #fff;
+  border-color: var(--color-vermilion-600);
+}
+
+/* Decorative elements */
+.ink-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-brown-300), transparent);
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}

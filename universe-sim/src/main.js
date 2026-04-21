@@ -415,18 +415,21 @@ function buildOrbitLine(a, ecc, color = 0x223355) {
 }
 
 // Sun
-const sunGeo = new THREE.SphereGeometry(12, 64, 64);
+const SUN_RADIUS = 12;
+const sunGeo = new THREE.SphereGeometry(SUN_RADIUS, 64, 64);
 const sunMat = new THREE.MeshBasicMaterial({ map: sunTex });
 const sunMesh = new THREE.Mesh(sunGeo, sunMat);
 scene.add(sunMesh);
 
 // Chromosphere – thin reddish shell just outside the photosphere
-const chromoGeo = new THREE.SphereGeometry(12.6, 64, 64);
+const CHROMOSPHERE_RADIUS = SUN_RADIUS * 1.05;
+const chromoGeo = new THREE.SphereGeometry(CHROMOSPHERE_RADIUS, 64, 64);
 const chromoMat = new THREE.MeshBasicMaterial({
   color: 0xff3300, transparent: true, opacity: 0.22,
   side: THREE.FrontSide, depthWrite: false,
 });
-scene.add(new THREE.Mesh(chromoGeo, chromoMat));
+const chromosphereMesh = new THREE.Mesh(chromoGeo, chromoMat);
+scene.add(chromosphereMesh);
 
 scene.add(coronaSprite);
 scene.add(haloSprite);

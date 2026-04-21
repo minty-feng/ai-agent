@@ -410,6 +410,7 @@ let glowMesh = null;
 const extras = [];  // extra meshes per stop
 
 function clearScene() {
+  if (rocketGroup) { scene.remove(rocketGroup); rocketGroup = null; }
   const all = [mainMesh, glowMesh, ...extras];
   all.forEach(m => { if (m) { scene.remove(m); m.geometry?.dispose(); } });
   mainMesh = null; glowMesh = null; extras.length = 0;
@@ -428,6 +429,97 @@ function makeGlowMesh(radius, color, intensity, exp, side = THREE.BackSide) {
       transparent: true, side, blending: THREE.AdditiveBlending, depthWrite: false,
     })
   );
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Rocket mesh builder
+   ════════════════════════════════════════════════════════════════════════════ */
+function buildRocketMesh() {
+  const g   = new THREE.Group();
+  const wht = new THREE.MeshStandardMaterial({ color: 0xddeeff, metalness: 0.70, roughness: 0.25 });
+  const red = new THREE.MeshStandardMaterial({ color: 0xff2020, metalness: 0.40, roughness: 0.50 });
+
+  // Body
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.054, 0.26, 12), wht));
+
+  // Nose cone
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.14, 12), red);
+  nose.position.y = 0.20;
+  g.add(nose);
+
+  // 3 fins
+  for (let i = 0; i < 3; i++) {
+    const a  = (i / 3) * Math.PI * 2;
+    const fn = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.09, 0.009), wht);
+    fn.position.set(Math.cos(a) * 0.058, -0.11, Math.sin(a) * 0.058);
+    fn.rotation.y = -a;
+    g.add(fn);
+  }
+
+  // Exhaust flame (inverted cone, pointing down)
+  const flameMat = new THREE.MeshStandardMaterial({
+    color: 0xff7700, emissive: 0xff5500, emissiveIntensity: 2.5,
+    transparent: true, opacity: 0.88,
+  });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.12, 8), flameMat);
+  flame.rotation.z = Math.PI;
+  flame.position.y = -0.19;
+  g.add(flame);
+  g.userData.flameMat = flameMat;
+
+  const fLight = new THREE.PointLight(0xff6600, 1.4, 0.85);
+  fLight.position.y = -0.20;
+  g.add(fLight);
+  g.userData.fLight = fLight;
+
+  return g;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Warp speed lines  (built once into the scene, persist across stops)
+   ════════════════════════════════════════════════════════════════════════════ */
+function initWarp() {
+  const N = 200, pos = new Float32Array(N * 6);
+  for (let i = 0; i < N; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const s = Math.sin(phi), c = Math.cos(phi);
+    const r = 2.0 + Math.random() * 5, l = 0.6 + Math.random() * 2.0;
+    pos[i * 6]     = r * s * Math.cos(theta);
+    pos[i * 6 + 1] = r * s * Math.sin(theta);
+    pos[i * 6 + 2] = r * c;
+    pos[i * 6 + 3] = (r + l) * s * Math.cos(theta);
+    pos[i * 6 + 4] = (r + l) * s * Math.sin(theta);
+    pos[i * 6 + 5] = (r + l) * c;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  warpLines = new THREE.LineSegments(
+    geo,
+    new THREE.LineBasicMaterial({ color: 0x9bbbff, transparent: true, opacity: 0, depthWrite: false })
+  );
+  scene.add(warpLines);
+}
+
+/* ─── Camera fly-in easing ──────────────────────────────────────────────── */
+const FLY_IN_DISTANCE_MULT = 5.5;  // camera starts this many times farther than target Z
+const FLY_IN_DURATION      = 0.60; // seconds for the easeOutCubic zoom
+
+// Warp transition timing constants (milliseconds)
+const WARP_DIM_MS       = 120; // start screen dim
+const WARP_BLACKOUT_MS  = 330; // reach full black
+const SCENE_SWAP_MS     = 480; // swap scene + begin fly-in
+const WARP_FADEOUT_MS   = 220; // ms after swap to start fading warp lines
+const TRANSITION_END_MS = 800; // ms after swap to unlock navigation
+const WARP_FADE_SPEED   = 14;  // lerp rate for warp line opacity per second
+
+function easeOutCubic(t) { return 1 - (1 - t) ** 3; }
+
+function startFlyIn(toZ) {
+  flyFromZ = toZ * FLY_IN_DISTANCE_MULT;
+  flyToZ   = toZ;
+  flyT     = 0;
+  camera.position.z = flyFromZ;
 }
 
 function buildStop(idx) {
@@ -504,6 +596,20 @@ function buildStop(idx) {
     const corona = makeGlowMesh(s.sphereR * 1.6, [1.0, 0.8, 0.2], 1.0, 1.2, THREE.BackSide);
     scene.add(corona); extras.push(corona);
   }
+
+  // Rocket — present at Human (stop 0) and Earth (stop 1) stops
+  rocketLaunch = false;
+  rocketVelY   = 0;
+  if (idx === 0) {
+    rocketGroup = buildRocketMesh();
+    rocketGroup.position.set(s.sphereR + 0.30, s.sphereR * 0.55, 0.2);
+    scene.add(rocketGroup);
+  } else if (idx === 1) {
+    rocketGroup = buildRocketMesh();
+    rocketGroup.scale.setScalar(0.18);
+    rocketGroup.position.set(0.4, s.sphereR + 0.022, 0.15);
+    scene.add(rocketGroup);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -512,6 +618,19 @@ function buildStop(idx) {
 let currentStop  = 0;
 let targetCamZ   = STOPS[0].camZ;
 let isTransitioning = false;
+
+// Rocket state
+let rocketGroup  = null;
+let rocketLaunch = false;
+let rocketVelY   = 0;
+
+// Warp speed lines state
+let warpLines  = null;
+let warpAlpha  = 0;
+let warpTarget = 0;
+
+// Camera fly-in state
+let flyFromZ = 0, flyToZ = 0, flyT = 1;
 
 /* ════════════════════════════════════════════════════════════════════════════
    UI updates
@@ -548,17 +667,36 @@ function navigateTo(idx) {
   if (idx === currentStop) return;
 
   isTransitioning = true;
-  overlay.style.opacity = '1';
 
+  // Trigger rocket launch animation if one is visible
+  if (rocketGroup) {
+    rocketLaunch = true;
+    rocketVelY   = 0;
+  }
+
+  // Phase 1: Warp lines flash in
+  warpTarget = 1;
+
+  // Phase 2: Screen dims then goes full black for scene swap
+  setTimeout(() => { overlay.style.opacity = '0.5'; }, WARP_DIM_MS);
+  setTimeout(() => { overlay.style.opacity = '1'; }, WARP_BLACKOUT_MS);
+
+  // Phase 3: Swap scene, start camera fly-in, fade out
   setTimeout(() => {
     currentStop = idx;
     buildStop(idx);
     updateUI(idx);
-    camera.position.z = STOPS[idx].camZ;
+
+    startFlyIn(STOPS[idx].camZ);
     targetCamZ = STOPS[idx].camZ;
+
     overlay.style.opacity = '0';
-    setTimeout(() => { isTransitioning = false; }, 650);
-  }, 420);
+
+    // Warp lines fade out shortly after scene appears
+    setTimeout(() => { warpTarget = 0; }, WARP_FADEOUT_MS);
+
+    setTimeout(() => { isTransitioning = false; }, TRANSITION_END_MS);
+  }, SCENE_SWAP_MS);
 }
 
 /* ── Event listeners ───────────────────────────────────────────────────────── */
@@ -601,13 +739,48 @@ function animate() {
   const dt = clock.getDelta();
   time += dt;
 
-  // Rotate the main object
+  // ── Camera fly-in ─────────────────────────────────────────────────────────
+  if (flyT < 1) {
+    flyT = Math.min(1, flyT + dt / FLY_IN_DURATION);
+    camera.position.z = flyFromZ + (flyToZ - flyFromZ) * easeOutCubic(flyT);
+  }
+
+  // ── Warp speed lines opacity ──────────────────────────────────────────────
+  if (warpLines) {
+    warpAlpha += (warpTarget - warpAlpha) * Math.min(1, dt * WARP_FADE_SPEED);
+    warpLines.material.opacity = Math.max(0, warpAlpha * 0.80);
+    warpLines.rotation.z += dt * 0.4;
+  }
+
+  // ── Rocket animation ──────────────────────────────────────────────────────
+  if (rocketGroup) {
+    // Pulsing exhaust flame
+    const pulse = 0.82 + Math.sin(time * 14) * 0.18;
+    if (rocketGroup.userData.flameMat) {
+      rocketGroup.userData.flameMat.emissiveIntensity = 2.5 * pulse;
+      rocketGroup.userData.flameMat.opacity = 0.70 + pulse * 0.18;
+    }
+    if (rocketGroup.userData.fLight) {
+      rocketGroup.userData.fLight.intensity = 1.4 * pulse;
+    }
+    // Gentle hover bobbing when idle
+    if (!rocketLaunch) {
+      rocketGroup.position.y += Math.sin(time * 2.2) * dt * 0.02;
+    }
+    // Launch: rocket accelerates upward
+    if (rocketLaunch) {
+      rocketVelY += dt * 4.5;
+      rocketGroup.position.y += rocketVelY * dt;
+    }
+  }
+
+  // ── Rotate the main object ────────────────────────────────────────────────
   if (mainMesh?.visible) {
     mainMesh.rotation.y += dt * 0.10;
     if (glowMesh) glowMesh.rotation.copy(mainMesh.rotation);
   }
 
-  // Earth–Moon stop: animate both bodies
+  // ── Earth–Moon stop: animate both bodies ──────────────────────────────────
   if (currentStop === 2 && extras.length >= 3) {
     const [earth, atm, moon] = extras;
     earth.rotation.y += dt * 0.14;
@@ -618,23 +791,23 @@ function animate() {
     moon.position.set(1.8 * Math.cos(orbit), 0.1 * Math.sin(orbit * 0.5), 1.8 * Math.sin(orbit));
   }
 
-  // Gentle star drift
+  // ── Gentle star drift ─────────────────────────────────────────────────────
   if (starMesh) starMesh.rotation.y += dt * 0.003;
 
-  // Sun pulsing glow
+  // ── Sun pulsing glow ──────────────────────────────────────────────────────
   if (currentStop === 3) {
     if (glowMesh?.material?.uniforms) {
       glowMesh.material.uniforms.glowIntensity.value = 2.0 + Math.sin(time * 1.8) * 0.5;
     }
   }
 
-  // Galaxy & solar system slow tilt-drift for depth feel
+  // ── Galaxy & solar system slow tilt-drift for depth feel ─────────────────
   if ((currentStop === 5 || currentStop === 6) && mainMesh) {
     mainMesh.rotation.y += dt * 0.06;
     mainMesh.rotation.z = Math.sin(time * 0.18) * 0.04;
   }
 
-  // Universe sphere slow pulse
+  // ── Universe sphere slow pulse ────────────────────────────────────────────
   if (currentStop === 7) {
     if (glowMesh?.material?.uniforms) {
       glowMesh.material.uniforms.glowIntensity.value = 1.4 + Math.sin(time * 0.9) * 0.35;
@@ -649,4 +822,5 @@ function animate() {
    ════════════════════════════════════════════════════════════════════════════ */
 buildStop(0);
 updateUI(0);
+initWarp();
 animate();

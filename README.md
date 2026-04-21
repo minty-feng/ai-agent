@@ -59,3 +59,15 @@ Modern recommendation workspace for solving the daily "what to wear" and "what t
 ### [tianya-posts](tianya-posts/)
 
 Classic Tianya Forum posts collection (天涯神贴) — curating legendary posts from China's iconic Tianya forum, spanning economic predictions, historical analysis, life reflections, supernatural stories, and more. Features a warm vintage parchment-themed frontend for reading, with an admin backend for managing posts and uploading PDF source materials. Built with Next.js 16, React 19, TypeScript, Tailwind CSS 4 (frontend) and Python FastAPI + SQLite (backend).
+
+### [how-big-is-space](how-big-is-space/)
+
+Interactive 3D scale journey from a single human to the edge of the observable universe across 8 cosmic stops. Features an animated rocket launch, warp-speed transitions with camera fly-in, procedural planet textures, rim-lighting GLSL shaders, and a logarithmic scale bar spanning 27 orders of magnitude. Built with Three.js r158 and vanilla ES modules — no bundler required.
+
+### [universe-sim](universe-sim/)
+
+Production-quality real-time 3D solar system simulator with all 8 planets, scientifically accurate orbital mechanics (Kepler ellipses, axial tilts, relative periods), Saturn/Uranus ring systems, 14,500+ stars with Milky Way density boost, and a full control panel (speed slider 0–100×, planet focus, pause/play). Procedural textures generated via Canvas 2D API — no external image assets. Built with Three.js r158 and vanilla ES modules.
+
+### [codeflow](codeflow/)
+
+Code architecture visualizer that fetches any GitHub repository, parses its import graph, detects hardcoded secrets, anti-patterns, and circular dependencies, computes an A–F health score, and renders an interactive D3 force-directed graph with blast-radius node sizing. Supports local mode with CMake/Bazel BUILD-file analysis and GTest dependency resolution. Built with Rust (Axum) backend and React 18/TypeScript/Vite/D3 frontend.

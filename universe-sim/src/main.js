@@ -421,7 +421,7 @@ PLANET_DATA.forEach(data => {
   // Saturn/Uranus rings
   let ringMesh = null;
   if (data.hasRings) {
-    const inner = data.radius * (data.ringThin ? 1.3 : 1.3);
+    const inner = data.radius * (data.ringThin ? 1.4 : 1.3);
     const outer = data.radius * (data.ringThin ? 1.6 : 2.5);
     const rGeo  = new THREE.RingGeometry(inner, outer, 128);
     // Remap UVs for ring texture (radial gradient)

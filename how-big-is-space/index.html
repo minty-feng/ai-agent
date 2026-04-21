@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Big Is Space? — 3D Scale Journey</title>
+  <link rel="stylesheet" href="src/style.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Three.js canvas -->
+  <div id="canvas-container"></div>
+
+  <!-- Full-screen fade overlay for transitions -->
+  <div id="fade-overlay"></div>
+
+  <!-- Page title -->
+  <div id="page-title">HOW BIG IS SPACE?</div>
+
+  <!-- Info panel -->
+  <aside id="info-panel" class="glass">
+    <div id="stop-emoji">🧑</div>
+    <div id="stop-name">A Human</div>
+    <div id="stop-subtitle">The Starting Point</div>
+
+    <div class="panel-divider"></div>
+
+    <div class="info-row">
+      <span class="info-label">SIZE</span>
+      <span id="stop-size" class="info-value">1.8 meters</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">SCALE COMPARISON</span>
+      <span id="stop-comparison" class="info-value">You are here</span>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <p id="stop-fact">
+      Your body holds ≈37 trillion cells and 7 octillion atoms —
+      nearly all forged inside dying stars billions of years ago.
+    </p>
+
+    <div class="panel-divider"></div>
+    <div id="stop-index">1 / 8</div>
+  </aside>
+
+  <!-- Navigation controls -->
+  <nav id="nav-controls">
+    <button id="btn-prev" class="nav-btn" disabled aria-label="Previous">&#8592;</button>
+
+    <div id="dots">
+      <span class="dot active" data-idx="0" title="A Human"></span>
+      <span class="dot" data-idx="1" title="Earth"></span>
+      <span class="dot" data-idx="2" title="Earth–Moon System"></span>
+      <span class="dot" data-idx="3" title="The Sun"></span>
+      <span class="dot" data-idx="4" title="Jupiter"></span>
+      <span class="dot" data-idx="5" title="The Solar System"></span>
+      <span class="dot" data-idx="6" title="The Milky Way"></span>
+      <span class="dot" data-idx="7" title="The Observable Universe"></span>
+    </div>
+
+    <button id="btn-next" class="nav-btn" aria-label="Next">&#8594;</button>
+  </nav>
+
+  <!-- Logarithmic scale bar -->
+  <div id="scale-bar">
+    <div id="scale-track">
+      <div id="scale-thumb"></div>
+    </div>
+    <div id="scale-labels">
+      <span>1.8 m</span>
+      <span id="scale-center-label">← logarithmic scale →</span>
+      <span>93 billion ly</span>
+    </div>
+  </div>
+
+  <!-- Keyboard hint -->
+  <div id="help-hint">Scroll · ← → keys · click dots</div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

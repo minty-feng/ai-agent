@@ -32,11 +32,15 @@ controls.rotateSpeed      = 0.5;
 controls.screenSpacePanning = false;
 
 // ─── Lighting ─────────────────────────────────────────────────────────────────
-const sunLight = new THREE.PointLight(0xfff5e0, 3.5, 0, 1.6);
+// decay:0 → constant intensity regardless of distance, so outer planets stay visible
+const sunLight = new THREE.PointLight(0xfff5e0, 2.2, 0, 0);
 sunLight.castShadow = true;
 sunLight.shadow.mapSize.set(2048, 2048);
 scene.add(sunLight);
-scene.add(new THREE.AmbientLight(0x090918, 1));
+// Slightly brighter ambient so night-sides are dark-but-visible, not pure black
+scene.add(new THREE.AmbientLight(0x1a1a30, 1));
+// Hemisphere light: warm sky (sun-side) / cool deep-space (away) for subtle fill
+scene.add(new THREE.HemisphereLight(0xfff0d0, 0x080818, 0.18));
 
 // ─── Textures (procedural) ────────────────────────────────────────────────────
 function makeCanvas(size, draw) {
@@ -57,22 +61,62 @@ function noiseVal(x, y, scale = 1, octaves = 4) {
   return v / max;
 }
 
-// Sun texture
+// Sun texture – limb-darkening + granulation + sunspots
 const sunTex = makeCanvas(512, (ctx, S) => {
+  // Base photosphere: bright white-yellow core fading to deep orange-red at limb (limb darkening)
   const g = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
-  g.addColorStop(0,   '#fff8c0');
-  g.addColorStop(0.3, '#ffcc40');
-  g.addColorStop(0.7, '#ff8800');
-  g.addColorStop(1,   '#cc4400');
+  g.addColorStop(0,    '#fffce8');   // near-white hot core
+  g.addColorStop(0.18, '#fff5a0');   // pale yellow
+  g.addColorStop(0.42, '#ffd040');   // golden
+  g.addColorStop(0.68, '#ff8c00');   // orange
+  g.addColorStop(0.88, '#e84000');   // deep orange-red
+  g.addColorStop(1,    '#7a1800');   // dark limb
   ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
-  // sunspot noise
-  for (let i = 0; i < 120; i++) {
-    const x = Math.random()*S, y = Math.random()*S;
-    const r = 3 + Math.random()*18;
-    const sg = ctx.createRadialGradient(x,y,0,x,y,r);
-    sg.addColorStop(0,   'rgba(80,20,0,0.5)');
+
+  // Solar granulation – small convection cells
+  for (let i = 0; i < 500; i++) {
+    const x = Math.random() * S, y = Math.random() * S;
+    const r = 2 + Math.random() * 7;
+    // Keep only cells within the disc
+    const dx = x - S/2, dy = y - S/2;
+    if (dx*dx + dy*dy > (S/2 - r) * (S/2 - r)) continue;
+    const bright = Math.random() < 0.5;
+    const cellG = ctx.createRadialGradient(x, y, 0, x, y, r);
+    if (bright) {
+      cellG.addColorStop(0, 'rgba(255,240,160,0.22)');
+      cellG.addColorStop(1, 'rgba(255,200,80,0)');
+    } else {
+      cellG.addColorStop(0, 'rgba(120,30,0,0.18)');
+      cellG.addColorStop(1, 'rgba(120,30,0,0)');
+    }
+    ctx.fillStyle = cellG; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Sunspots
+  for (let i = 0; i < 60; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = Math.random() * S * 0.36;
+    const x = S/2 + dist * Math.cos(angle);
+    const y = S/2 + dist * Math.sin(angle);
+    const r = 2 + Math.random() * 10;
+    const sg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    sg.addColorStop(0,   'rgba(30,5,0,0.75)');
+    sg.addColorStop(0.5, 'rgba(60,10,0,0.35)');
     sg.addColorStop(1,   'rgba(80,20,0,0)');
-    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Subtle radial plasma streaks (faculae)
+  for (let i = 0; i < 80; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r0 = S * 0.15, r1 = S * (0.3 + Math.random() * 0.2);
+    ctx.save();
+    ctx.translate(S/2, S/2);
+    ctx.rotate(angle);
+    ctx.strokeStyle = `rgba(255,220,100,${0.03 + Math.random()*0.05})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath(); ctx.moveTo(r0, 0); ctx.lineTo(r1, 0); ctx.stroke();
+    ctx.restore();
   }
 });
 
@@ -255,20 +299,36 @@ function buildStarfield() {
 
 scene.add(buildStarfield());
 
-// ─── Sun Glow Sprite ──────────────────────────────────────────────────────────
-const sunGlowTex = makeCanvas(256, (ctx, S) => {
-  const g = ctx.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
-  g.addColorStop(0,   'rgba(255,240,100,0.8)');
-  g.addColorStop(0.2, 'rgba(255,160,0,0.5)');
-  g.addColorStop(0.5, 'rgba(255,80,0,0.15)');
-  g.addColorStop(1,   'rgba(0,0,0,0)');
-  ctx.fillStyle = g; ctx.fillRect(0,0,S,S);
+// ─── Sun Glow / Corona Sprites ────────────────────────────────────────────────
+// Outer diffuse corona
+const sunCoronaTex = makeCanvas(256, (ctx, S) => {
+  const g = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+  g.addColorStop(0,    'rgba(255,240,120,0.55)');
+  g.addColorStop(0.15, 'rgba(255,160,20,0.35)');
+  g.addColorStop(0.38, 'rgba(255,80,0,0.12)');
+  g.addColorStop(0.65, 'rgba(200,40,0,0.04)');
+  g.addColorStop(1,    'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+});
+// Inner bright halo
+const sunHaloTex = makeCanvas(256, (ctx, S) => {
+  const g = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+  g.addColorStop(0,    'rgba(255,255,220,0.9)');
+  g.addColorStop(0.25, 'rgba(255,220,80,0.6)');
+  g.addColorStop(0.55, 'rgba(255,100,0,0.2)');
+  g.addColorStop(1,    'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
 });
 
-const sunGlowMat = new THREE.SpriteMaterial({ map: sunGlowTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-const sunGlowSprite = new THREE.Sprite(sunGlowMat);
-sunGlowSprite.scale.set(120, 120, 1);
-scene.add(sunGlowSprite);
+const coronaMat = new THREE.SpriteMaterial({ map: sunCoronaTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const coronaSprite = new THREE.Sprite(coronaMat);
+coronaSprite.scale.set(240, 240, 1);
+scene.add(coronaSprite);
+
+const haloMat = new THREE.SpriteMaterial({ map: sunHaloTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+const haloSprite = new THREE.Sprite(haloMat);
+haloSprite.scale.set(80, 80, 1);
+scene.add(haloSprite);
 
 // ─── Planet Data ──────────────────────────────────────────────────────────────
 /*
@@ -355,11 +415,24 @@ function buildOrbitLine(a, ecc, color = 0x223355) {
 }
 
 // Sun
-const sunGeo = new THREE.SphereGeometry(12, 64, 64);
+const SUN_RADIUS = 12;
+const sunGeo = new THREE.SphereGeometry(SUN_RADIUS, 64, 64);
 const sunMat = new THREE.MeshBasicMaterial({ map: sunTex });
 const sunMesh = new THREE.Mesh(sunGeo, sunMat);
 scene.add(sunMesh);
-scene.add(sunGlowSprite);
+
+// Chromosphere – thin reddish shell just outside the photosphere
+const CHROMOSPHERE_RADIUS = SUN_RADIUS * 1.05;
+const chromoGeo = new THREE.SphereGeometry(CHROMOSPHERE_RADIUS, 64, 64);
+const chromoMat = new THREE.MeshBasicMaterial({
+  color: 0xff3300, transparent: true, opacity: 0.22,
+  side: THREE.FrontSide, depthWrite: false,
+});
+const chromosphereMesh = new THREE.Mesh(chromoGeo, chromoMat);
+scene.add(chromosphereMesh);
+
+scene.add(coronaSprite);
+scene.add(haloSprite);
 
 // Moon data
 const MOON_DATA = {
@@ -724,9 +797,11 @@ function animate(now) {
   const dayOfYear = Math.floor((totalYears - yr) * 365.25);
   simDateEl.textContent = `📅 Year ${yr}  ·  Day ${dayOfYear}`;
 
-  // Sun glow pulse
-  const pulse = 1 + Math.sin(now * 0.001) * 0.04;
-  sunGlowSprite.scale.set(120 * pulse, 120 * pulse, 1);
+  // Sun corona & halo pulse (corona breathes slowly, halo flickers slightly)
+  const pulse  = 1 + Math.sin(now * 0.0008) * 0.05;
+  const hPulse = 1 + Math.sin(now * 0.0022) * 0.03;
+  coronaSprite.scale.set(240 * pulse,  240 * pulse,  1);
+  haloSprite.scale.set  ( 80 * hPulse,  80 * hPulse, 1);
 
   renderer.render(scene, camera);
 }

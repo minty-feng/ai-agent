@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar System Simulator</title>
+
+  <link rel="stylesheet" href="src/style.css" />
+
+  <!-- Three.js import map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Loading screen -->
+  <div id="loading">
+    <div class="loader-ring"></div>
+    <h1>SOLAR SYSTEM</h1>
+    <p>INITIALISING SIMULATION</p>
+  </div>
+
+  <!-- Three.js canvas container -->
+  <div id="canvas-container"></div>
+
+  <!-- ── Control Panel ── -->
+  <div id="ui-panel" class="glass">
+    <h2>Solar System</h2>
+
+    <div id="sim-date">📅 Year 2024 · Day 0</div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Speed -->
+    <div class="ctrl-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label>⚡ Speed</label>
+        <span id="speed-val">10×</span>
+      </div>
+      <input type="range" id="speed-slider" min="0" max="100" step="0.5" value="10" />
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Toggles -->
+    <div class="ctrl-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="labels-toggle" checked />
+        🏷 Planet Labels
+      </label>
+    </div>
+    <div class="ctrl-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="orbits-toggle" checked />
+        ⭕ Orbit Paths
+      </label>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button id="pause-btn">⏸ Pause</button>
+      <button id="reset-btn">🏠 Reset View</button>
+    </div>
+
+    <div class="panel-divider"></div>
+
+    <!-- Planet list -->
+    <div id="planet-list-section">
+      <h3>Navigate to</h3>
+      <ul id="planet-list"></ul>
+    </div>
+  </div>
+
+  <!-- Focus hint -->
+  <div id="focus-hint"></div>
+
+  <!-- Tooltip -->
+  <div id="tooltip"></div>
+
+  <!-- Help hint -->
+  <div id="help-hint">
+    Double-click planet to follow<br>
+    Scroll to zoom · Drag to orbit<br>
+    Esc to release focus
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -18,11 +18,11 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-blue-200/60 backdrop-blur-xl bg-white/70">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-[#30363d] backdrop-blur-xl bg-[#0d1117]/80">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-sky-400 flex items-center justify-center pulse-glow">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1f6feb] to-[#a371f7] flex items-center justify-center pulse-glow">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
               <path d="M9 7V11M7 9H11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
@@ -78,7 +78,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-blue-200/60 bg-white/90 backdrop-blur-xl px-6 py-4 flex flex-col gap-4">
+        <div className="md:hidden border-t border-[#30363d] bg-[#0d1117]/95 backdrop-blur-xl px-6 py-4 flex flex-col gap-4">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -89,7 +89,7 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <div className="flex flex-col gap-2 pt-2 border-t border-blue-200/60">
+          <div className="flex flex-col gap-2 pt-2 border-t border-[#30363d]">
             <button className="btn-outline text-sm font-medium px-4 py-2 rounded-lg w-full">登录</button>
             <button className="btn-primary text-sm font-medium px-4 py-2 rounded-lg w-full">免费开始</button>
           </div>

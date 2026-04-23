@@ -32,6 +32,10 @@ A modern, responsive dashboard demo inspired by HackerRank. Showcases dashboard 
 
 Interactive English training app for programmers. Practice technical vocabulary (algorithms, OS, AI, networking, databases), read real technical passages with comprehension questions, write professional git commit messages, and compose code review comments — all in English. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
+### [ai-platform](ai-platform/)
+
+Complete commercial website for the ModelBridge AI SaaS platform. Built with Next.js 15, React 19, TypeScript, and Tailwind CSS 4. Five pages covering: a full landing page (Hero / stats / feature grid / model preview / architecture / pricing / testimonials / CTA), a Model Gallery (50+ LLMs across flagship, open-source, domestic, and embedding/multimodal categories with pricing and specs), a Tools & Features deep-dive (API gateway, RAG pipeline, LLM parameter extraction, Agent framework, LLMOps monitoring, enterprise security), a Pricing page (Free / Pro ¥999/mo / Enterprise with full comparison table and FAQ), and a Developer Docs page (quick-start, multi-language examples, API reference, SDK downloads, OpenAI migration guide). Dark glassmorphism design with Indigo–Violet–Cyan gradient branding, fully responsive.
+
 ### [opencode](opencode/)
 
 Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry points (`attach`, `thread`) and their worker/RPC bridge without pulling in the full application. Includes network configuration, RPC client/server via `postMessage`, and command builder utilities.
@@ -67,6 +71,22 @@ Interactive 3D scale journey from a single human to the edge of the observable u
 ### [universe-sim](universe-sim/)
 
 Production-quality real-time 3D solar system simulator with all 8 planets, scientifically accurate orbital mechanics (Kepler ellipses, axial tilts, relative periods), Saturn/Uranus ring systems, 14,500+ stars with Milky Way density boost, and a full control panel (speed slider 0–100×, planet focus, pause/play). Procedural textures generated via Canvas 2D API — no external image assets. Built with Three.js r158 and vanilla ES modules.
+
+### [dify](dify/)
+
+Dify — 开源 LLM 应用开发平台深度解析。涵盖可视化工作流编排（DAG 拖拽节点）、内置 RAG 管线（文档上传→分块→向量化→混合检索→Rerank）、Agent 能力（ReAct / Function Calling）、100+ 模型供应商统一管理、LLMOps（日志 / 标注 / 评估）、Docker Compose / Kubernetes 私有部署、多租户 RBAC、API 与 SDK 设计，以及与 LangChain、LlamaIndex、Flowise 的横向对比，并给出企业私有化落地要点与和 ModelBridge 的协同架构。
+
+### [langchain](langchain/)
+
+LangChain — 最主流 LLM 应用开发框架深度解析（Python + TypeScript 双栈）。涵盖核心抽象（Runnable / LCEL 管道语法）、RAG 管线（文档加载 → 分块 → 向量化 → 检索 → 生成，含 Multi-Query / RAG Fusion / Parent-Child 等高级策略）、Agent 与工具调用、对话记忆、LangGraph 有状态多 Agent 工作流、LangSmith LLMOps 平台（Trace / Playground / Evaluation）、100+ 模型集成（OpenAI / Claude / Gemini / Ollama）、LangServe 生产部署，以及常见生产陷阱与和 ModelBridge 的协同模式。
+
+### [ai-tools-comparison](ai-tools-comparison/)
+
+AI 工具全景横向对比 —— **Dify / LangChain / LlamaIndex / AutoGen / CrewAI / Flowise / Haystack / ModelBridge** 八款工具的核心维度对比矩阵（功能、易用性、定制度、生产稳定性）、各工具深度介绍与代码示例、场景化选型建议（8 类典型场景）、四种典型架构组合方案、学习成本与上手时间估算、LLM API 与向量库成本分析，以及 2025 年多 Agent / 本地模型 / LLMOps 技术趋势总结。
+
+### [modelbridge](modelbridge/)
+
+ModelBridge — 面向国内/国际企业与开发者的 AI 中台 SaaS 产品方案，提供 **模型管理 + API 服务 + 智能机器人接入 + LLM 参数提取** 能力，支持自托管 / 云端部署、按需微调与多模型推理。本目录是产品的完整设计文档（产品 / 技术 / 运营 / 合规 / 路线图），并附可执行的 MVP 与 30 / 90 / 180 天计划，以及核心 REST API 的 OpenAPI 3.0 草案（`/v1/infer`、`/v1/extract`、模型 / Key / 用量管理接口）。
 
 ### [codeflow](codeflow/)
 

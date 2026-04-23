@@ -1,0 +1,350 @@
+openapi: 3.0.3
+info:
+  title: ModelBridge API
+  version: 0.1.0-draft
+  description: |
+    ModelBridge — 模型管理 + 推理 + LLM 参数提取 SaaS 的核心 API 草案。
+    本文档为初版骨架，字段与错误码将随产品演进补全。完整产品方案见 README.md。
+  contact:
+    name: ModelBridge Team
+servers:
+  - url: https://api.modelbridge.example.com
+    description: Production (placeholder)
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Inference
+    description: 通用推理（聊天 / 文本）接口
+  - name: Extraction
+    description: LLM 参数提取（结构化抽取）专项接口
+  - name: Models
+    description: 模型注册、版本与生命周期管理
+  - name: Keys
+    description: API key 管理
+  - name: Usage
+    description: 用量与计费
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /v1/infer:
+    post:
+      tags: [Inference]
+      summary: 提交一次推理请求（同步或异步）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferRequest'
+      responses:
+        '202':
+          description: 已受理（异步）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferAcceptedResponse'
+        '200':
+          description: 同步返回结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /v1/infer/{id}:
+    get:
+      tags: [Inference]
+      summary: 轮询异步推理结果
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 推理结果（可能仍在排队/进行中）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/extract:
+    post:
+      tags: [Extraction]
+      summary: LLM 参数提取（按 schema 抽取结构化字段）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractRequest'
+      responses:
+        '200':
+          description: 抽取结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/models:
+    get:
+      tags: [Models]
+      summary: 列出可用模型
+      responses:
+        '200':
+          description: 模型列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Model' }
+
+  /v1/models/{id}/versions:
+    get:
+      tags: [Models]
+      summary: 列出模型版本
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 版本列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ModelVersion' }
+
+  /v1/keys:
+    get:
+      tags: [Keys]
+      summary: 列出当前租户的 API Keys
+      responses:
+        '200':
+          description: API key 列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ApiKey' }
+
+  /v1/usage:
+    get:
+      tags: [Usage]
+      summary: 查询用量与计费
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: 用量汇总
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    InferRequest:
+      type: object
+      required: [model_id, input]
+      properties:
+        model_id: { type: string }
+        tenant_id: { type: string }
+        callback_url: { type: string, format: uri }
+        input:
+          type: object
+          required: [type]
+          properties:
+            type:
+              type: string
+              enum: [chat, text]
+            messages:
+              type: array
+              items: { $ref: '#/components/schemas/ChatMessage' }
+            text: { type: string }
+        params:
+          type: object
+          properties:
+            temperature: { type: number, minimum: 0, maximum: 2 }
+            max_tokens: { type: integer, minimum: 1 }
+            stream: { type: boolean, default: false }
+            extraction_schema:
+              type: object
+              description: 可选；若提供则在推理后按 schema 做结构化抽取
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant, tool]
+        content: { type: string }
+
+    InferAcceptedResponse:
+      type: object
+      properties:
+        request_id: { type: string }
+        status:
+          type: string
+          enum: [queued, processing]
+
+    InferResult:
+      type: object
+      properties:
+        request_id: { type: string }
+        status:
+          type: string
+          enum: [queued, processing, succeeded, failed]
+        output: { type: string }
+        usage:
+          type: object
+          properties:
+            prompt_tokens: { type: integer }
+            completion_tokens: { type: integer }
+            total_tokens: { type: integer }
+        error: { $ref: '#/components/schemas/Error' }
+
+    ExtractRequest:
+      type: object
+      required: [text, schemaId]
+      properties:
+        model_id: { type: string }
+        text: { type: string }
+        schemaId:
+          type: string
+          description: 已注册的 schema ID
+        context:
+          type: object
+          additionalProperties: true
+        options:
+          type: object
+          properties:
+            confidence_threshold:
+              type: number
+              minimum: 0
+              maximum: 1
+              default: 0.8
+            mode:
+              type: string
+              enum: [prompt, fine_tuned, hybrid]
+              default: prompt
+
+    ExtractResponse:
+      type: object
+      properties:
+        extracted_json:
+          type: object
+          additionalProperties: true
+        confidence: { type: number }
+        provenance:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              source_span:
+                type: object
+                properties:
+                  start: { type: integer }
+                  end: { type: integer }
+              confidence: { type: number }
+
+    Model:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        family: { type: string, example: llama }
+        latest_version: { type: string }
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum: [chat, text, embedding, extraction]
+
+    ModelVersion:
+      type: object
+      properties:
+        id: { type: string }
+        model_id: { type: string }
+        version: { type: string }
+        format:
+          type: string
+          enum: [hf, gguf, onnx, ggml]
+        quantization:
+          type: string
+          enum: [fp16, int8, int4, none]
+        created_at: { type: string, format: date-time }
+
+    ApiKey:
+      type: object
+      properties:
+        id: { type: string }
+        prefix: { type: string }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        scopes:
+          type: array
+          items: { type: string }
+
+    UsageSummary:
+      type: object
+      properties:
+        from: { type: string, format: date }
+        to:   { type: string, format: date }
+        total_requests: { type: integer }
+        total_tokens: { type: integer }
+        gpu_seconds: { type: number }
+        amount_cny: { type: number }
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string }
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: 未认证或 API Key 无效
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: 触发限流
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

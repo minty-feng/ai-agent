@@ -4,6 +4,26 @@ import Link from "next/link";
 
 const tools = [
   {
+    id: "openai",
+    name: "OpenAI Assistants & Agents SDK",
+    type: "官方框架",
+    icon: "🟢",
+    stars: "—",
+    license: "MIT / 官方",
+    color: "from-emerald-500/20 to-teal-500/20",
+    tagColor: "tag-green",
+    tag: "官方首选",
+    desc: "OpenAI 官方推出的应用层套件：Assistants API（线程式对话 + 内置 Code Interpreter / File Search / Function Calling）与 Agents SDK（轻量多 Agent 编排 + Handoff + Tracing），是接入 GPT-4o / o1 / o3 系列最稳的官方路径。",
+    strengths: [
+      "Assistants API：内置文件检索、代码解释器、Threads 状态管理",
+      "Agents SDK：声明式定义 Agent / Tool / Handoff，几行代码搭多 Agent",
+      "原生 Function Calling 与结构化输出（JSON Schema）",
+      "官方 Tracing 面板，调用链可视化排查",
+    ],
+    bestFor: "深度依赖 GPT-4o / o 系列、希望使用官方稳定能力的团队",
+    setupTime: "Hello World 10 分钟 · 可用 Demo 1 天",
+  },
+  {
     id: "dify",
     name: "Dify",
     type: "低代码平台",
@@ -110,14 +130,120 @@ const tools = [
   },
 ];
 
+// ── AI 编程助手 / Coding Agents — 最新一代「LLM × IDE / CLI」工具 ──
+const codingAgents = [
+  {
+    id: "claude-code",
+    name: "Claude Code",
+    vendor: "Anthropic",
+    icon: "🧑‍💻",
+    tag: "最新",
+    tagColor: "tag-cyan",
+    color: "from-orange-500/20 to-amber-500/20",
+    desc: "Anthropic 官方推出的终端原生编程 Agent。直接在你的项目目录中调用 Claude 3.5/4 系列，自动读写文件、执行命令、运行测试，原生支持 MCP 工具协议，是当前最强的「Agentic Coding」工具之一。",
+    highlights: [
+      "终端 / VS Code 双端，零配置接入现有仓库",
+      "Agentic 模式：规划 → 编辑 → 运行 → 自检全自动",
+      "原生 MCP，可挂接任意工具与数据源",
+      "企业版支持 SSO / 审计日志 / 私网代理",
+    ],
+    bestFor: "代码重构、跨文件大改、PR 草稿生成、自动化排障",
+  },
+  {
+    id: "cursor",
+    name: "Cursor",
+    vendor: "Anysphere",
+    icon: "⌘",
+    tag: "AI IDE",
+    tagColor: "",
+    color: "from-indigo-500/20 to-violet-500/20",
+    desc: "AI-first 的代码编辑器，基于 VS Code 内核重新打造。Composer 多文件编辑、Agent 模式自主执行、Tab 续写、Codebase 全仓库语义检索，已成为 AI 工程师事实标准之一。",
+    highlights: [
+      "Composer + Agent：跨文件需求一句话落地",
+      "全仓库语义索引，回答 / 修改基于真实上下文",
+      "支持 Claude / GPT / Gemini 等多模型自由切换",
+      "Privacy Mode：代码不参与训练，企业可放心用",
+    ],
+    bestFor: "日常开发主力 IDE、新项目脚手架、跨文件重构",
+  },
+  {
+    id: "copilot",
+    name: "GitHub Copilot",
+    vendor: "GitHub × OpenAI",
+    icon: "🐙",
+    tag: "企业首选",
+    tagColor: "tag-green",
+    color: "from-slate-500/20 to-zinc-500/20",
+    desc: "GitHub 与 OpenAI 联合出品、装机量最大的 AI 编程助手。Copilot Chat、Edits、Workspace、Coding Agent 一应俱全，与 GitHub Issues / PR / Actions 深度联动，企业合规背书最强。",
+    highlights: [
+      "覆盖 VS Code / JetBrains / Vim / Visual Studio 全家桶",
+      "Coding Agent 直接在 GitHub Issue 上认领并提 PR",
+      "企业版数据不留存、不训练，符合 SOC 2 / ISO 27001",
+      "与 GitHub Actions / Code Scanning 无缝集成",
+    ],
+    bestFor: "已使用 GitHub 的团队、对合规审计要求高的企业",
+  },
+  {
+    id: "codex-cli",
+    name: "Codex CLI",
+    vendor: "OpenAI",
+    icon: "🔧",
+    tag: "终端 Agent",
+    tagColor: "tag-amber",
+    color: "from-emerald-500/20 to-teal-500/20",
+    desc: "OpenAI 开源的轻量级终端编程 Agent，由 o4-mini / GPT-4.1 系列驱动。沙箱执行、补丁审查、Approval 模式可控，定位与 Claude Code 直接对标，配合 OpenAI 账号可即开即用。",
+    highlights: [
+      "纯命令行，npm/brew 一键安装",
+      "三档自治：建议 / 自动编辑 / 自动执行",
+      "改动以 patch 形式呈现，便于 Code Review",
+      "开源 MIT，可二次开发集成到内部工具链",
+    ],
+    bestFor: "脚本化批改、CI/CD 内嵌、轻量自动化任务",
+  },
+  {
+    id: "aider",
+    name: "Aider",
+    vendor: "开源社区",
+    icon: "🛠️",
+    tag: "OSS",
+    tagColor: "tag-rose",
+    color: "from-rose-500/20 to-red-500/20",
+    desc: "纯 Git 友好的开源终端编程 Agent。每次修改自动生成提交，repo-map 提取仓库骨架后高质量参与多文件改动，支持 GPT-4o / Claude / DeepSeek 等几乎所有主流模型。",
+    highlights: [
+      "每次修改自动 commit，回滚极简",
+      "repo-map 自动提取仓库结构，token 利用率高",
+      "支持 100+ 模型（含本地 Ollama / vLLM）",
+      "适合学习 Agentic Coding 内部机制",
+    ],
+    bestFor: "开源项目维护、本地模型 + 私有代码、教学研究",
+  },
+  {
+    id: "continue",
+    name: "Continue",
+    vendor: "Continue.dev",
+    icon: "🔁",
+    tag: "可定制",
+    tagColor: "",
+    color: "from-cyan-500/20 to-sky-500/20",
+    desc: "开源的 IDE AI 助手框架（VS Code / JetBrains），允许企业用 YAML 自定义模型、上下文提供器、Slash 命令与 Agent，是想要「自建 Copilot」的团队的最佳起点。",
+    highlights: [
+      "完全开源、可私有化部署的 AI 助手前端",
+      "YAML 配置模型路由、上下文、命令、规则",
+      "支持 Ollama / vLLM / TGI 等本地后端",
+      "与 ModelBridge 网关天然契合，统一管控用量",
+    ],
+    bestFor: "想自建公司内部 Copilot、严格数据不出域的企业",
+  },
+];
+
 const matrix = [
-  { dim: "可视化低代码", dify: "✅", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅", haystack: "❌" },
-  { dim: "RAG / 知识库", dify: "✅内置", langchain: "✅完整", llamaindex: "✅专长", autogen: "⚠️基础", crewai: "⚠️基础", flowise: "✅内置", haystack: "✅完整" },
-  { dim: "多 Agent 协作", dify: "✅", langchain: "✅LangGraph", llamaindex: "✅", autogen: "✅多Agent", crewai: "✅多Agent", flowise: "✅", haystack: "✅" },
-  { dim: "工作流编排", dify: "✅拖拽DAG", langchain: "✅LangGraph", llamaindex: "⚠️有限", autogen: "✅对话流", crewai: "✅任务流", flowise: "✅拖拽", haystack: "✅Pipeline" },
-  { dim: "非技术用户友好", dify: "✅最友好", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅友好", haystack: "❌" },
-  { dim: "生产稳定性", dify: "✅高", langchain: "⚠️API变化", llamaindex: "✅较稳定", autogen: "✅较稳定", crewai: "✅稳定", flowise: "✅较稳定", haystack: "✅企业级" },
-  { dim: "私有化部署", dify: "✅", langchain: "✅自行搭建", llamaindex: "✅自行搭建", autogen: "✅自行搭建", crewai: "✅自行搭建", flowise: "✅", haystack: "✅" },
+  { dim: "可视化低代码", openai: "❌", dify: "✅", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅", haystack: "❌" },
+  { dim: "RAG / 知识库", openai: "✅File Search", dify: "✅内置", langchain: "✅完整", llamaindex: "✅专长", autogen: "⚠️基础", crewai: "⚠️基础", flowise: "✅内置", haystack: "✅完整" },
+  { dim: "多 Agent 协作", openai: "✅Agents SDK", dify: "✅", langchain: "✅LangGraph", llamaindex: "✅", autogen: "✅多Agent", crewai: "✅多Agent", flowise: "✅", haystack: "✅" },
+  { dim: "工作流编排", openai: "✅Handoff", dify: "✅拖拽DAG", langchain: "✅LangGraph", llamaindex: "⚠️有限", autogen: "✅对话流", crewai: "✅任务流", flowise: "✅拖拽", haystack: "✅Pipeline" },
+  { dim: "非技术用户友好", openai: "❌", dify: "✅最友好", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅友好", haystack: "❌" },
+  { dim: "生产稳定性", openai: "✅官方", dify: "✅高", langchain: "⚠️API变化", llamaindex: "✅较稳定", autogen: "✅较稳定", crewai: "✅稳定", flowise: "✅较稳定", haystack: "✅企业级" },
+  { dim: "私有化部署", openai: "❌仅云端", dify: "✅", langchain: "✅自行搭建", llamaindex: "✅自行搭建", autogen: "✅自行搭建", crewai: "✅自行搭建", flowise: "✅", haystack: "✅" },
 ];
 
 const scenarios = [
@@ -223,8 +349,13 @@ export default function EcosystemPage() {
             主流 AI 工具，我们全部玩转
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
-            从 Dify 低代码平台到 LangChain 代码框架，从 AutoGen 多 Agent 到 Haystack 企业级 RAG——
-            ModelBridge 团队深度掌握主流 AI 工具生态，为你提供选型咨询、私有化搭建与持续优化支持。
+            从 <span className="text-indigo-400 font-medium">OpenAI Assistants</span>、
+            <span className="text-indigo-400 font-medium">Dify</span>、
+            <span className="text-indigo-400 font-medium">LangChain</span> 到最新的{" "}
+            <span className="text-indigo-400 font-medium">Claude Code</span> /{" "}
+            <span className="text-indigo-400 font-medium">Cursor</span> /{" "}
+            <span className="text-indigo-400 font-medium">Codex CLI</span>——
+            ModelBridge 团队深度掌握主流 AI 工具与 Agent 生态，提供选型咨询、私有化搭建与持续优化支持。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
             <Link href="/pricing" className="btn-primary px-8 py-3 rounded-xl font-semibold text-sm inline-block">
@@ -240,8 +371,8 @@ export default function EcosystemPage() {
         <section className="mb-28">
           <div className="text-center mb-12">
             <span className="tag inline-block mb-4">工具全景</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">8 大主流工具深度解析</h2>
-            <p className="text-slate-400 max-w-xl mx-auto">我们在每个工具上都有真实的生产落地经验，帮你少走弯路。</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">主流应用框架深度解析</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">从官方 Assistants 到开源框架，我们在每个工具上都有真实的生产落地经验，帮你少走弯路。</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -323,6 +454,67 @@ export default function EcosystemPage() {
           </div>
         </section>
 
+        {/* ── AI Coding Agents — 「最新一代编程 Agent」 ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag tag-cyan inline-block mb-4">最新趋势 · Coding Agents</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              主流 AI 编程 Agent，全部驾驭
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              从 Anthropic <span className="text-indigo-400 font-medium">Claude Code</span>、OpenAI{" "}
+              <span className="text-indigo-400 font-medium">Codex CLI</span>，到{" "}
+              <span className="text-indigo-400 font-medium">Cursor</span> /{" "}
+              <span className="text-indigo-400 font-medium">GitHub Copilot</span>——
+              我们帮你在团队中落地最新一代 Agentic Coding 工具，统一接入、统一计费、统一治理。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {codingAgents.map((agent) => (
+              <div
+                key={agent.id}
+                className={`glass-card rounded-2xl p-6 bg-gradient-to-br ${agent.color} flex flex-col`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{agent.icon}</span>
+                    <div>
+                      <h3 className="font-bold text-white text-lg leading-tight">{agent.name}</h3>
+                      <p className="text-slate-500 text-xs">{agent.vendor}</p>
+                    </div>
+                  </div>
+                  <span className={`tag ${agent.tagColor} flex-shrink-0`}>{agent.tag}</span>
+                </div>
+
+                <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">{agent.desc}</p>
+
+                <ul className="space-y-1.5 mb-4">
+                  {agent.highlights.map((h) => (
+                    <li key={h} className="flex items-start gap-2 text-slate-300 text-xs">
+                      <svg className="text-indigo-400 flex-shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 7l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="border-t border-white/5 pt-3 mt-auto">
+                  <p className="text-slate-500 text-xs">
+                    <span className="text-slate-400 font-medium">最适合：</span>{agent.bestFor}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center text-slate-500 text-sm">
+            还有 <span className="text-slate-300">Windsurf · Cline · Roo Code · Devin · Zed AI</span>{" "}
+            等？我们都跟进过生产落地经验，可在咨询时具体讨论选型。
+          </div>
+        </section>
+
         {/* ── Comparison matrix ── */}
         <section className="mb-28">
           <div className="text-center mb-12">
@@ -336,7 +528,7 @@ export default function EcosystemPage() {
               <thead>
                 <tr className="border-b border-white/5">
                   <th className="text-left text-slate-400 font-medium px-5 py-4 min-w-[140px]">维度</th>
-                  {["Dify", "LangChain", "LlamaIndex", "AutoGen", "CrewAI", "Flowise", "Haystack"].map((h) => (
+                  {["OpenAI", "Dify", "LangChain", "LlamaIndex", "AutoGen", "CrewAI", "Flowise", "Haystack"].map((h) => (
                     <th key={h} className="text-center text-slate-300 font-semibold px-3 py-4 min-w-[100px]">{h}</th>
                   ))}
                 </tr>
@@ -345,7 +537,7 @@ export default function EcosystemPage() {
                 {matrix.map((row, i) => (
                   <tr key={row.dim} className={`border-b border-white/5 ${i % 2 === 0 ? "bg-white/[0.01]" : ""}`}>
                     <td className="text-slate-400 px-5 py-3 font-medium">{row.dim}</td>
-                    {[row.dify, row.langchain, row.llamaindex, row.autogen, row.crewai, row.flowise, row.haystack].map((val, j) => (
+                    {[row.openai, row.dify, row.langchain, row.llamaindex, row.autogen, row.crewai, row.flowise, row.haystack].map((val, j) => (
                       <td key={j} className="text-center px-3 py-3 text-slate-300 text-xs">{val}</td>
                     ))}
                   </tr>

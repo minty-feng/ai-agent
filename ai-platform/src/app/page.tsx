@@ -34,7 +34,7 @@ const features = [
   {
     icon: "🤖",
     title: "智能 Agent 框架",
-    desc: "ReAct / Function Calling 双模式，内置工具市场（搜索、代码执行、计算器、数据库查询），支持多 Agent 协作工作流。",
+    desc: "ReAct / Function Calling 双模式，原生兼容 OpenAI Agents SDK、Dify、LangChain、Claude Code 等主流框架，统一接入 50+ 工具市场，支持多 Agent 协作工作流。",
     tag: "Agent",
     tagColor: "tag-amber",
   },
@@ -124,7 +124,7 @@ export default function HomePage() {
         <div className="hero-glow" style={{ top: 0, left: "50%", transform: "translate(-50%, -50%)" }} />
 
         <div className="relative max-w-4xl mx-auto">
-          <span className="tag inline-block mb-6">🚀 现已支持 GPT-4o · Claude 3.5 · Gemini 1.5</span>
+          <span className="tag inline-block mb-6">🚀 现已支持 GPT-4o · Claude 3.5 · Gemini 1.5 · Claude Code · Cursor</span>
 
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6 text-white tracking-tight">
             连接每一个大模型

@@ -68,6 +68,10 @@ Interactive 3D scale journey from a single human to the edge of the observable u
 
 Production-quality real-time 3D solar system simulator with all 8 planets, scientifically accurate orbital mechanics (Kepler ellipses, axial tilts, relative periods), Saturn/Uranus ring systems, 14,500+ stars with Milky Way density boost, and a full control panel (speed slider 0–100×, planet focus, pause/play). Procedural textures generated via Canvas 2D API — no external image assets. Built with Three.js r158 and vanilla ES modules.
 
+### [modelbridge](modelbridge/)
+
+ModelBridge — 面向国内/国际企业与开发者的 AI 中台 SaaS 产品方案，提供 **模型管理 + API 服务 + 智能机器人接入 + LLM 参数提取** 能力，支持自托管 / 云端部署、按需微调与多模型推理。本目录是产品的完整设计文档（产品 / 技术 / 运营 / 合规 / 路线图），并附可执行的 MVP 与 30 / 90 / 180 天计划，以及核心 REST API 的 OpenAPI 3.0 草案（`/v1/infer`、`/v1/extract`、模型 / Key / 用量管理接口）。
+
 ### [codeflow](codeflow/)
 
 Code architecture visualizer that fetches any GitHub repository, parses its import graph, detects hardcoded secrets, anti-patterns, and circular dependencies, computes an A–F health score, and renders an interactive D3 force-directed graph with blast-radius node sizing. Supports local mode with CMake/Bazel BUILD-file analysis and GTest dependency resolution. Built with Rust (Axum) backend and React 18/TypeScript/Vite/D3 frontend.

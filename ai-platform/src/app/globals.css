@@ -1,50 +1,110 @@
 @import "tailwindcss";
 
-/* ── Design tokens ── */
+/* ──────────────────────────────────────────────────────────────────
+   Design tokens — Light-blue (淡蓝色) theme
+   ────────────────────────────────────────────────────────────────── */
 :root {
-  --brand-primary: #6366f1;
-  --brand-secondary: #8b5cf6;
-  --brand-accent: #06b6d4;
-  --background: #0a0a0f;
-  --foreground: #e2e8f0;
+  --brand-primary:   #2563eb;   /* blue-600 */
+  --brand-secondary: #0ea5e9;   /* sky-500 */
+  --brand-accent:    #38bdf8;   /* sky-400 */
+  --background:      #eff6ff;   /* blue-50 base */
+  --foreground:      #0f172a;   /* slate-900 */
+  --surface:         #ffffff;
+  --surface-soft:    #f0f7ff;
+  --border-soft:     rgba(37, 99, 235, 0.12);
+  --border-strong:   rgba(37, 99, 235, 0.28);
 }
 
+/*
+ * Tailwind v4 theme overrides.
+ *
+ * The site was originally authored for a dark theme and uses a lot of
+ * `text-white`, `border-white/5`, `bg-black/40`, `text-slate-300/400/500`
+ * utilities directly inside the page markup.  Instead of rewriting hundreds
+ * of class names we remap the underlying color tokens here so every existing
+ * utility automatically renders correctly on a light-blue background.
+ *
+ *   text-white          -> dark slate text (legible on light bg)
+ *   bg-black/xx         -> translucent light-blue overlay (navbar/footer)
+ *   border-white/xx     -> subtle blue border
+ *   text-slate-300/400  -> darker slate for body text on light bg
+ *   indigo-* family     -> mapped onto the blue/sky family for cohesion
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Invert the neutral anchors so legacy dark-theme classes work on light bg */
+  --color-white: #0f172a;            /* used by text-white, border-white/x, bg-white/x */
+  --color-black: #dbeafe;            /* used by bg-black/40 navbar etc. -> light blue */
+
+  /* Re-balance slate scale for legibility on a light-blue background */
+  --color-slate-200: #475569;
+  --color-slate-300: #475569;
+  --color-slate-400: #475569;
+  --color-slate-500: #334155;
+  --color-slate-600: #1e293b;
+  --color-slate-700: #0f172a;
+  --color-slate-800: #0b1220;
+
+  /* Map the indigo family onto the blue/sky family so existing
+     `from-indigo-500`, `text-indigo-400`, `bg-indigo-900/20`… classes all
+     read as light-blue accents instead of purple. */
+  --color-indigo-300: #7dd3fc;       /* sky-300 */
+  --color-indigo-400: #38bdf8;       /* sky-400 */
+  --color-indigo-500: #0ea5e9;       /* sky-500 */
+  --color-indigo-600: #0284c7;       /* sky-600 */
+  --color-indigo-700: #0369a1;       /* sky-700 */
+  --color-indigo-900: #dbeafe;       /* blue-100 (used for muted bg tints) */
+  --color-indigo-950: #eff6ff;       /* blue-50 */
+
+  /* Soften purple/fuchsia accents toward blue too */
+  --color-purple-400: #38bdf8;
+  --color-purple-500: #0ea5e9;
+  --color-fuchsia-500: #38bdf8;
+  --color-violet-500: #0ea5e9;
 }
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans, 'Inter', system-ui, -apple-system, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(circle at 12% 0%,  rgba(56, 189, 248, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 88% 8%,  rgba(37, 99, 235, 0.14) 0%, transparent 50%),
+    linear-gradient(180deg, #eaf3ff 0%, #dceaff 40%, #e8f1ff 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
+/* ── Reusable visual primitives ────────────────────────────────── */
+
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 50%, #38bdf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--border-soft);
   backdrop-filter: blur(12px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
 }
 
 .gradient-border {
@@ -57,7 +117,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  background: linear-gradient(135deg, #2563eb, #0ea5e9, #38bdf8);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -69,7 +129,7 @@ body {
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, transparent 70%);
   filter: blur(40px);
   pointer-events: none;
 }
@@ -77,12 +137,12 @@ body {
 .section-divider {
   border: none;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(99, 102, 241, 0.3), transparent);
+  background: linear-gradient(to right, transparent, rgba(37, 99, 235, 0.28), transparent);
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  50%      { transform: translateY(-8px); }
 }
 
 .float-animation {
@@ -90,8 +150,8 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.25); }
+  50%      { box-shadow: 0 0 40px rgba(37, 99, 235, 0.45); }
 }
 
 .pulse-glow {
@@ -99,15 +159,16 @@ body {
 }
 
 .code-block {
-  background: #0d1117;
-  border: 1px solid #30363d;
+  background: #0f172a;
+  border: 1px solid #1e293b;
   border-radius: 8px;
+  color: #e2e8f0;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
 .nav-link {
   position: relative;
-  color: #94a3b8;
+  color: #475569;
   transition: color 0.2s;
 }
 
@@ -118,12 +179,12 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
   transition: width 0.3s;
 }
 
 .nav-link:hover {
-  color: #e2e8f0;
+  color: #0f172a;
 }
 
 .nav-link:hover::after {
@@ -131,35 +192,35 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
   border: none;
   transition: all 0.2s;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  opacity: 0.95;
   transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.35);
 }
 
 .btn-outline {
-  background: transparent;
-  border: 1px solid rgba(99, 102, 241, 0.5);
-  color: #a5b4fc;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  color: #1d4ed8;
   transition: all 0.2s;
 }
 
 .btn-outline:hover {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.1);
-  color: #e0e7ff;
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1e3a8a;
 }
 
 .tag {
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a5b4fc;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  color: #1d4ed8;
   font-size: 0.7rem;
   padding: 2px 8px;
   border-radius: 100px;
@@ -169,36 +230,35 @@ body {
 }
 
 .tag-cyan {
-  background: rgba(6, 182, 212, 0.15);
-  border-color: rgba(6, 182, 212, 0.3);
-  color: #67e8f9;
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.32);
+  color: #0369a1;
 }
 
 .tag-green {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.32);
+  color: #047857;
 }
 
 .tag-amber {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.34);
+  color: #b45309;
 }
 
 .tag-rose {
-  background: rgba(244, 63, 94, 0.15);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: #fda4af;
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.32);
+  color: #be123c;
 }
 
 .stat-number {
   font-size: 3rem;
   font-weight: 800;
   line-height: 1;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-

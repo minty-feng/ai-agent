@@ -3,6 +3,7 @@ import Link from "next/link";
 const footerLinks = {
   产品: [
     { label: "模型广场", href: "/models" },
+    { label: "应用广场", href: "/apps" },
     { label: "功能特性", href: "/tools" },
     { label: "生态工具", href: "/ecosystem" },
     { label: "定价方案", href: "/pricing" },
@@ -60,24 +61,24 @@ const socials = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/5 bg-black/30 mt-24">
+    <footer className="border-t border-blue-200/60 bg-white/50 backdrop-blur-sm mt-24">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Top row */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-sky-400 flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
                   <path d="M9 7V11M7 9H11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
-              <span className="font-bold text-lg text-white">
+              <span className="font-bold text-lg text-slate-900">
                 Model<span className="gradient-text">Bridge</span>
               </span>
             </Link>
-            <p className="text-slate-500 text-sm leading-relaxed mb-4">
+            <p className="text-slate-600 text-sm leading-relaxed mb-4">
               企业级 AI 中台 SaaS，连接每一个大模型，赋能每一个业务场景。
             </p>
             <div className="flex items-center gap-3">
@@ -86,7 +87,7 @@ export default function Footer() {
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
-                  className="text-slate-500 hover:text-slate-300 transition-colors"
+                  className="text-slate-500 hover:text-blue-600 transition-colors"
                 >
                   {s.icon}
                 </a>
@@ -97,13 +98,13 @@ export default function Footer() {
           {/* Link groups */}
           {Object.entries(footerLinks).map(([group, links]) => (
             <div key={group}>
-              <h3 className="text-white font-semibold text-sm mb-4">{group}</h3>
+              <h3 className="text-slate-900 font-semibold text-sm mb-4">{group}</h3>
               <ul className="flex flex-col gap-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                      className="text-slate-600 hover:text-blue-700 text-sm transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -117,11 +118,11 @@ export default function Footer() {
         <hr className="section-divider mb-8" />
 
         {/* Bottom row */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-slate-600 text-sm">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
           <p>© 2025 ModelBridge Inc. 保留所有权利。</p>
           <p className="flex items-center gap-1">
             <span>🇨🇳 中文</span>
-            <span className="mx-2 text-slate-700">|</span>
+            <span className="mx-2 text-slate-400">|</span>
             <span>EN</span>
           </p>
         </div>

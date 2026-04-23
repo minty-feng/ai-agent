@@ -32,6 +32,10 @@ A modern, responsive dashboard demo inspired by HackerRank. Showcases dashboard 
 
 Interactive English training app for programmers. Practice technical vocabulary (algorithms, OS, AI, networking, databases), read real technical passages with comprehension questions, write professional git commit messages, and compose code review comments — all in English. Built with Next.js 15, TypeScript, and Tailwind CSS.
 
+### [ai-platform](ai-platform/)
+
+Complete commercial website for the ModelBridge AI SaaS platform. Built with Next.js 15, React 19, TypeScript, and Tailwind CSS 4. Five pages covering: a full landing page (Hero / stats / feature grid / model preview / architecture / pricing / testimonials / CTA), a Model Gallery (50+ LLMs across flagship, open-source, domestic, and embedding/multimodal categories with pricing and specs), a Tools & Features deep-dive (API gateway, RAG pipeline, LLM parameter extraction, Agent framework, LLMOps monitoring, enterprise security), a Pricing page (Free / Pro ¥999/mo / Enterprise with full comparison table and FAQ), and a Developer Docs page (quick-start, multi-language examples, API reference, SDK downloads, OpenAI migration guide). Dark glassmorphism design with Indigo–Violet–Cyan gradient branding, fully responsive.
+
 ### [opencode](opencode/)
 
 Minimal TUI CLI extraction from the OpenCode dev branch. Isolates the CLI entry points (`attach`, `thread`) and their worker/RPC bridge without pulling in the full application. Includes network configuration, RPC client/server via `postMessage`, and command builder utilities.

@@ -1,0 +1,453 @@
+import Link from "next/link";
+
+// ───────────────────────────── data ──────────────────────────────
+
+const tools = [
+  {
+    id: "dify",
+    name: "Dify",
+    type: "低代码平台",
+    icon: "🎨",
+    stars: "70k+",
+    license: "Apache 2.0",
+    color: "from-purple-500/20 to-fuchsia-500/20",
+    tagColor: "tag-cyan",
+    tag: "推荐入门",
+    desc: "LLM 应用的「可视化全栈平台」。拖拽式工作流编辑器，内置 RAG 知识库、LLMOps 日志与标注，100+ 模型支持，非技术团队也能直接上手。",
+    strengths: ["可视化工作流，产品/运营可自助操作", "内置 RAG：上传文档即用，无需写代码", "完整 LLMOps：日志、标注、评估、人工反馈", "Docker 私有化部署门槛极低"],
+    bestFor: "企业知识库问答、客服 Bot、非技术团队主导项目",
+    setupTime: "Hello World 10 分钟 · 可用 Demo 1 天",
+  },
+  {
+    id: "langchain",
+    name: "LangChain",
+    type: "代码框架",
+    icon: "🔗",
+    stars: "95k+",
+    license: "MIT",
+    color: "from-green-500/20 to-emerald-500/20",
+    tagColor: "tag-green",
+    tag: "生态最大",
+    desc: "LLM 应用开发的「乐高积木」。LCEL 管道语法优雅，LangGraph 支持复杂有状态多 Agent 工作流，LangSmith 提供最完整的 LLMOps 能力，500+ 集成生态。",
+    strengths: ["LCEL 管道语法优雅，组合极灵活", "LangGraph 支持复杂有状态多 Agent", "LangSmith 最完整的 LLMOps 能力", "500+ 集成：向量库、模型、工具"],
+    bestFor: "高度定制推理链、复杂 Agent 逻辑、有 Python 开发团队的项目",
+    setupTime: "Hello World 1 小时 · 生产就绪 1 月",
+  },
+  {
+    id: "llamaindex",
+    name: "LlamaIndex",
+    type: "代码框架",
+    icon: "🦙",
+    stars: "38k+",
+    license: "MIT",
+    color: "from-yellow-500/20 to-amber-500/20",
+    tagColor: "tag-amber",
+    tag: "RAG 专长",
+    desc: "以 RAG 为核心的数据框架。150+ 数据连接器（PDF/Notion/SQL/GitHub），多种索引策略（向量/树/知识图谱），子问题分解与多步检索，多模态联合检索。",
+    strengths: ["150+ 数据连接器，从 PDF 到 GitHub", "多种索引策略：向量/树/关键词/知识图谱", "高级检索：子问题分解、HyDE、RAPTOR", "事件驱动异步 Workflow（v0.10+）"],
+    bestFor: "文档检索核心应用、复杂 RAG 多索引策略、多模态检索",
+    setupTime: "Hello World 1 小时 · 可用 Demo 3 天",
+  },
+  {
+    id: "autogen",
+    name: "AutoGen",
+    type: "多 Agent 框架",
+    icon: "🤝",
+    stars: "37k+",
+    license: "MIT",
+    color: "from-blue-500/20 to-indigo-500/20",
+    tagColor: "",
+    tag: "微软出品",
+    desc: "微软开源的多 Agent 对话框架。ConversableAgent 通过消息传递协作，GroupChat 多 Agent 自动选择发言，内置 Human-in-the-Loop，Agent 可在 Docker 沙箱执行代码。",
+    strengths: ["GroupChat：多 Agent 对话协作，自动选发言者", "Human-in-the-Loop：内置人机协作节点", "代码执行：Agent 在 Docker 沙箱生成并运行代码", "AutoGen Studio：可视化配置 Agent 团队"],
+    bestFor: "软件工程自动化、数据分析自动化、多专家协作复杂任务",
+    setupTime: "Hello World 1 小时 · 可用 Demo 3 天",
+  },
+  {
+    id: "crewai",
+    name: "CrewAI",
+    type: "多 Agent 框架",
+    icon: "👥",
+    stars: "25k+",
+    license: "MIT",
+    color: "from-rose-500/20 to-red-500/20",
+    tagColor: "tag-rose",
+    tag: "易上手",
+    desc: "以「角色扮演团队」为核心的多 Agent 框架。每个 Agent 有 role/goal/backstory，像真实员工；任务可串行或由 Manager Agent 分配；内置搜索、代码执行、文件操作等工具。",
+    strengths: ["Role-based Agent：role/goal/backstory 配置直观", "顺序/层级任务执行，流水线天然契合业务", "内置工具：搜索、代码执行、文件操作", "比 AutoGen 更易上手，代码量更少"],
+    bestFor: "内容生产（研究→写作→校对）、销售自动化、多步骤业务流程",
+    setupTime: "Hello World 30 分钟 · 可用 Demo 2 天",
+  },
+  {
+    id: "flowise",
+    name: "Flowise",
+    type: "低代码平台",
+    icon: "🌊",
+    stars: "33k+",
+    license: "Apache 2.0",
+    color: "from-cyan-500/20 to-sky-500/20",
+    tagColor: "tag-cyan",
+    tag: "拖拽式",
+    desc: "基于 LangChain 的可视化低代码平台。配置好流程后一键生成 REST API，一行代码嵌入任意网站，Marketplace 共享流程模板，Docker 部署简单。",
+    strengths: ["基于 LangChain 节点，功能对齐 LangChain 生态", "API 直接导出：配置后一键生成 REST API", "嵌入式 Widget：一行代码嵌入任意网站", "Marketplace：共享流程模板，开箱即用"],
+    bestFor: "快速原型、开发者构建内部工具、LangChain 生态但不想写代码",
+    setupTime: "Hello World 20 分钟 · 可用 Demo 1 天",
+  },
+  {
+    id: "haystack",
+    name: "Haystack",
+    type: "代码框架",
+    icon: "🌾",
+    stars: "18k+",
+    license: "Apache 2.0",
+    color: "from-orange-500/20 to-amber-500/20",
+    tagColor: "",
+    tag: "企业级",
+    desc: "deepset 开源的企业级 NLP + RAG 框架。Pipeline 组件连接成有向图（类型安全），内置对接 Elasticsearch/Weaviate/Milvus，API 稳定，Hayhooks 一键发布为 REST API。",
+    strengths: ["Pipeline 架构：组件有向图，类型安全", "内置对接 Elasticsearch、Weaviate、Milvus", "生产级：企业用户多，API 稳定", "内置完善的 RAG 评估指标框架"],
+    bestFor: "传统 NLP 转 LLM、搜索增强、对稳定性要求高于灵活性的企业",
+    setupTime: "Hello World 2 小时 · 可用 Demo 3 天",
+  },
+];
+
+const matrix = [
+  { dim: "可视化低代码", dify: "✅", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅", haystack: "❌" },
+  { dim: "RAG / 知识库", dify: "✅内置", langchain: "✅完整", llamaindex: "✅专长", autogen: "⚠️基础", crewai: "⚠️基础", flowise: "✅内置", haystack: "✅完整" },
+  { dim: "多 Agent 协作", dify: "✅", langchain: "✅LangGraph", llamaindex: "✅", autogen: "✅多Agent", crewai: "✅多Agent", flowise: "✅", haystack: "✅" },
+  { dim: "工作流编排", dify: "✅拖拽DAG", langchain: "✅LangGraph", llamaindex: "⚠️有限", autogen: "✅对话流", crewai: "✅任务流", flowise: "✅拖拽", haystack: "✅Pipeline" },
+  { dim: "非技术用户友好", dify: "✅最友好", langchain: "❌", llamaindex: "❌", autogen: "❌", crewai: "❌", flowise: "✅友好", haystack: "❌" },
+  { dim: "生产稳定性", dify: "✅高", langchain: "⚠️API变化", llamaindex: "✅较稳定", autogen: "✅较稳定", crewai: "✅稳定", flowise: "✅较稳定", haystack: "✅企业级" },
+  { dim: "私有化部署", dify: "✅", langchain: "✅自行搭建", llamaindex: "✅自行搭建", autogen: "✅自行搭建", crewai: "✅自行搭建", flowise: "✅", haystack: "✅" },
+];
+
+const scenarios = [
+  {
+    label: "A",
+    title: "企业内部知识库（非技术团队）",
+    rec: "Dify",
+    color: "from-purple-500/10 to-fuchsia-500/10",
+    reason: "可视化知识库管理，产品/运营可自助上传文档、调整 Prompt、查看日志，无需开发介入。",
+  },
+  {
+    label: "B",
+    title: "客服自动化 + CRM 集成",
+    rec: "Dify + LangChain",
+    color: "from-green-500/10 to-emerald-500/10",
+    reason: "Dify 做意图识别与 FAQ 回答，LangChain 实现复杂 CRM API 调用逻辑，通过 Dify Custom Tool 对接。",
+  },
+  {
+    label: "C",
+    title: "合同/报表结构化数据提取",
+    rec: "ModelBridge + LangChain",
+    color: "from-indigo-500/10 to-violet-500/10",
+    reason: "ModelBridge 提供高可靠参数提取 API，LangChain 做批量文档处理管线，准确率 >95%。",
+  },
+  {
+    label: "D",
+    title: "AI 编程助手 / 软件工程自动化",
+    rec: "AutoGen 或 LangGraph",
+    color: "from-blue-500/10 to-cyan-500/10",
+    reason: "规划 Agent + 代码执行 Agent + 测试 Agent 协作，AutoGen 的 GroupChat 或 LangGraph 状态机均擅长此场景。",
+  },
+  {
+    label: "E",
+    title: "内容生产流水线（调研→撰写→审校）",
+    rec: "CrewAI",
+    color: "from-rose-500/10 to-red-500/10",
+    reason: "角色化 Agent 配置直观，任务串行流水线天然契合内容生产场景，代码量少，上手快。",
+  },
+  {
+    label: "F",
+    title: "复杂 RAG（多数据源 + 多索引策略）",
+    rec: "LlamaIndex + LangChain",
+    color: "from-yellow-500/10 to-amber-500/10",
+    reason: "LlamaIndex 数据连接器和索引能力最强，构建索引后用 LangChain 做应用逻辑，强强联合。",
+  },
+  {
+    label: "G",
+    title: "高稳定性企业级 NLP/RAG",
+    rec: "Haystack",
+    color: "from-orange-500/10 to-amber-500/10",
+    reason: "API 稳定、企业用户验证充分、Pipeline 架构类型安全，适合稳定性优先的团队。",
+  },
+  {
+    label: "H",
+    title: "快速出原型 + 无运维压力",
+    rec: "Dify Cloud 或 Flowise",
+    color: "from-cyan-500/10 to-sky-500/10",
+    reason: "上手时间最短，Dify Cloud 免部署，Flowise Docker 极简部署，适合快速验证业务假设。",
+  },
+];
+
+const services = [
+  {
+    icon: "🗺️",
+    title: "工具选型咨询",
+    desc: "根据你的业务场景、团队技术栈、预算与合规要求，为你提供量身定制的工具选型建议，避免踩坑，缩短决策周期。",
+    items: ["场景分析与需求梳理", "工具对比与 POC 方案设计", "技术风险评估与选型报告"],
+  },
+  {
+    icon: "🛠️",
+    title: "搭建与部署支持",
+    desc: "从 Docker 部署到 Kubernetes 生产集群，从 Dify 私有化到 LangChain 生产环境，我们提供全程技术支持，帮你快速落地。",
+    items: ["私有化部署（Docker / K8s）", "CI/CD 集成与自动化配置", "性能调优与高可用架构"],
+  },
+  {
+    icon: "📈",
+    title: "效果优化与迭代",
+    desc: "上线后持续监控 RAG 召回质量、Agent 任务成功率、LLM 成本，定期评估并优化 Prompt 与检索策略，保障业务效果持续提升。",
+    items: ["RAG 召回质量评估与优化", "Prompt 工程与 AB 测试", "成本优化与模型降级策略"],
+  },
+];
+
+const trends = [
+  { num: "01", title: "多 Agent 系统成主流", desc: "CrewAI / AutoGen / LangGraph 的多 Agent 协作模式正在成为标准架构，单 Agent 无法应对复杂任务。" },
+  { num: "02", title: "低代码与代码融合", desc: "Dify 工作流支持嵌入代码，LangGraph 可视化工具逐步完善，低代码与代码的边界正在模糊。" },
+  { num: "03", title: "本地模型崛起", desc: "Llama 3、Qwen 2.5、Mistral 等开源模型质量接近 GPT-4，配合 Ollama/vLLM，私有部署成本大幅下降。" },
+  { num: "04", title: "Advanced RAG 成熟", desc: "Multi-Query、Rerank、HyDE、RAPTOR 等技术成熟，LlamaIndex 和 LangChain 均有完整支持。" },
+  { num: "05", title: "LLMOps 规范化", desc: "LangSmith、Langfuse 等工具建立 LLM 可观测性标准，AI 应用进入精细化运营阶段。" },
+  { num: "06", title: "MCP 协议普及", desc: "Anthropic 的 MCP 正成为 Agent 工具集成新标准，Dify、LangChain 均已支持或计划支持。" },
+];
+
+// ───────────────────────────── page ──────────────────────────────
+
+export default function EcosystemPage() {
+  return (
+    <div className="min-h-screen px-6 py-16">
+      <div className="max-w-7xl mx-auto">
+
+        {/* ── Hero ── */}
+        <div className="text-center mb-20">
+          <span className="tag inline-block mb-4">生态工具</span>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">
+            主流 AI 工具，我们全部玩转
+          </h1>
+          <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
+            从 Dify 低代码平台到 LangChain 代码框架，从 AutoGen 多 Agent 到 Haystack 企业级 RAG——
+            ModelBridge 团队深度掌握主流 AI 工具生态，为你提供选型咨询、私有化搭建与持续优化支持。
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+            <Link href="/pricing" className="btn-primary px-8 py-3 rounded-xl font-semibold text-sm inline-block">
+              预约咨询 →
+            </Link>
+            <Link href="/docs" className="btn-outline px-8 py-3 rounded-xl font-semibold text-sm inline-block">
+              查看文档
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Tool cards ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag inline-block mb-4">工具全景</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">8 大主流工具深度解析</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">我们在每个工具上都有真实的生产落地经验，帮你少走弯路。</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {tools.map((tool) => (
+              <div
+                key={tool.id}
+                className={`glass-card rounded-2xl p-6 bg-gradient-to-br ${tool.color} flex flex-col`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{tool.icon}</span>
+                    <div>
+                      <h3 className="font-bold text-white text-lg leading-tight">{tool.name}</h3>
+                      <p className="text-slate-500 text-xs">{tool.type} · ⭐ {tool.stars}</p>
+                    </div>
+                  </div>
+                  <span className={`tag ${tool.tagColor} flex-shrink-0`}>{tool.tag}</span>
+                </div>
+
+                {/* Desc */}
+                <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">{tool.desc}</p>
+
+                {/* Strengths */}
+                <ul className="space-y-1.5 mb-4">
+                  {tool.strengths.map((s) => (
+                    <li key={s} className="flex items-start gap-2 text-slate-300 text-xs">
+                      <svg className="text-indigo-400 flex-shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 7l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Footer */}
+                <div className="border-t border-white/5 pt-3 mt-auto">
+                  <p className="text-slate-500 text-xs mb-1">
+                    <span className="text-slate-400 font-medium">最适合：</span>{tool.bestFor}
+                  </p>
+                  <p className="text-slate-500 text-xs">
+                    <span className="text-slate-400 font-medium">上手时间：</span>{tool.setupTime}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* ModelBridge card */}
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 gradient-border flex flex-col">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🌉</span>
+                  <div>
+                    <h3 className="font-bold text-white text-lg leading-tight">ModelBridge</h3>
+                    <p className="text-slate-500 text-xs">推理中台 · 自研</p>
+                  </div>
+                </div>
+                <span className="tag flex-shrink-0">自研</span>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">
+                底层推理中台——模型管理 + 统一推理 API + LLM 参数提取。是上层 Dify / LangChain 的算力与模型底座，与上述所有工具无缝集成。
+              </p>
+              <ul className="space-y-1.5 mb-4">
+                {["统一 API 接入 50+ 大模型，零代码切换", "LLM 参数提取引擎，准确率 >95%", "RAG 管线、Agent 框架、LLMOps 一体化", "企业级安全合规，支持私有化 On-Prem 部署"].map((s) => (
+                  <li key={s} className="flex items-start gap-2 text-slate-300 text-xs">
+                    <svg className="text-indigo-400 flex-shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 7l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+              <div className="border-t border-white/5 pt-3 mt-auto">
+                <Link href="/tools" className="text-indigo-400 text-xs font-medium hover:text-indigo-300 transition-colors">
+                  查看全部功能特性 →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Comparison matrix ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag inline-block mb-4">横向对比</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">核心能力对比矩阵</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">一张表看清各工具的能力边界，快速锁定适合你的方案。</p>
+          </div>
+
+          <div className="glass-card rounded-2xl overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5">
+                  <th className="text-left text-slate-400 font-medium px-5 py-4 min-w-[140px]">维度</th>
+                  {["Dify", "LangChain", "LlamaIndex", "AutoGen", "CrewAI", "Flowise", "Haystack"].map((h) => (
+                    <th key={h} className="text-center text-slate-300 font-semibold px-3 py-4 min-w-[100px]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {matrix.map((row, i) => (
+                  <tr key={row.dim} className={`border-b border-white/5 ${i % 2 === 0 ? "bg-white/[0.01]" : ""}`}>
+                    <td className="text-slate-400 px-5 py-3 font-medium">{row.dim}</td>
+                    {[row.dify, row.langchain, row.llamaindex, row.autogen, row.crewai, row.flowise, row.haystack].map((val, j) => (
+                      <td key={j} className="text-center px-3 py-3 text-slate-300 text-xs">{val}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ── Scenario recommendations ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag inline-block mb-4">场景选型</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">不同场景，最优组合推荐</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">我们根据上百个落地案例总结出的选型建议，避免盲目跟风。</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {scenarios.map((s) => (
+              <div key={s.label} className={`glass-card rounded-2xl p-6 bg-gradient-to-br ${s.color}`}>
+                <div className="flex items-start gap-4">
+                  <span className="text-2xl font-extrabold text-white/20 leading-none mt-0.5 font-mono">{s.label}</span>
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">{s.title}</h3>
+                    <div className="inline-flex items-center gap-1.5 mb-3">
+                      <span className="text-indigo-400 text-xs font-medium">推荐：</span>
+                      <span className="tag text-xs">{s.rec}</span>
+                    </div>
+                    <p className="text-slate-400 text-sm leading-relaxed">{s.reason}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Our services ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag inline-block mb-4">我们能帮你做什么</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">从选型到落地，全程护航</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">
+              不只是工具推荐，我们提供端到端的 AI 工程落地服务，让技术真正转化为业务价值。
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {services.map((svc) => (
+              <div key={svc.title} className="glass-card rounded-2xl p-6">
+                <div className="text-4xl mb-4">{svc.icon}</div>
+                <h3 className="font-bold text-white text-lg mb-3">{svc.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-4">{svc.desc}</p>
+                <ul className="space-y-2">
+                  {svc.items.map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-slate-300 text-sm">
+                      <svg className="text-indigo-400 flex-shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 7l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Trends ── */}
+        <section className="mb-28">
+          <div className="text-center mb-12">
+            <span className="tag inline-block mb-4">2025 技术趋势</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">AI 工具生态正在快速演进</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">我们持续跟踪行业前沿，确保你的技术选型不落伍。</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {trends.map((t) => (
+              <div key={t.num} className="glass-card rounded-2xl p-6">
+                <div className="text-4xl font-extrabold text-white/10 font-mono mb-3">{t.num}</div>
+                <h3 className="font-semibold text-white mb-2">{t.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{t.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <div className="text-center glass-card rounded-2xl p-10 gradient-border bg-gradient-to-br from-indigo-900/20 to-violet-900/20">
+          <h2 className="text-2xl font-bold text-white mb-3">不知道选哪个工具？让我们帮你决策</h2>
+          <p className="text-slate-400 mb-6 max-w-lg mx-auto">
+            描述你的业务场景，我们的 AI 工程师团队将在 24 小时内给出专业选型建议和 POC 方案。
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/pricing" className="btn-primary px-8 py-3 rounded-xl font-semibold text-sm inline-block">
+              预约免费咨询
+            </Link>
+            <Link href="/tools" className="btn-outline px-8 py-3 rounded-xl font-semibold text-sm inline-block">
+              了解 ModelBridge 能力
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import { useState } from "react";
 const navLinks = [
   { href: "/models", label: "模型广场" },
   { href: "/tools", label: "功能特性" },
+  { href: "/ecosystem", label: "生态工具" },
   { href: "/pricing", label: "定价方案" },
   { href: "/docs", label: "开发文档" },
 ];

@@ -4,6 +4,7 @@ const footerLinks = {
   产品: [
     { label: "模型广场", href: "/models" },
     { label: "功能特性", href: "/tools" },
+    { label: "生态工具", href: "/ecosystem" },
     { label: "定价方案", href: "/pricing" },
     { label: "更新日志", href: "#" },
   ],
